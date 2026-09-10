@@ -35,9 +35,9 @@ One workflow, one job: `.github/workflows/verify.yml`, triggered by `push` and `
 
 | Step | Action | Why |
 |---|---|---|
-| 1 | `actions/checkout@v4` | get the repo |
-| 2 | `actions/setup-node@v4` with `node-version-file: .nvmrc` | `init.sh` hard-requires Node (`dsh` needs Node 20+); `.nvmrc` pins 22 |
-| 3 | `actions/setup-python@v5` (3.12) | the YAML cross-check is Python |
+| 1 | `actions/checkout@v7` | get the repo |
+| 2 | `actions/setup-node@v7` with `node-version-file: .nvmrc` | `init.sh` hard-requires Node (`dsh` needs Node 20+); `.nvmrc` pins 22 |
+| 3 | `actions/setup-python@v7` (3.12) | the YAML cross-check is Python |
 | 4 | `python3 -m pip install pyyaml` | see "the silent-skip trap" below |
 | 5 | `./init.sh` | the gate itself |
 
@@ -57,7 +57,7 @@ guard; `shellcheck` is present on the Ubuntu image, and `init.sh` skips it grace
 | Decision | Why | Accepted cost |
 |---|---|---|
 | Work directly on `main` | one-file additive change; this repo's convention is commit-then-publish on `main`; the workflow is itself unverified until the first push | no PR isolation for this change |
-| Action refs by major tag (`@v4`, `@v5`) | readable, universally used | not SHA-pinned against tag retargeting |
+| Action refs by major tag (`@v7`) | readable, universally used; `v7` tracks the Node-24 runner runtime (the `v4`/`v5` majors still target Node 20 and now draw a deprecation annotation) | not SHA-pinned against tag retargeting |
 | Python 3.12 pinned in the workflow | deterministic | one more version to bump |
 | `init.sh` also checks the workflow | removing `run: ./init.sh` or the PyYAML step becomes a local failure instead of an invisible gap | a little coupling between the gate and its CI wiring |
 

@@ -15,16 +15,18 @@ jobs:
     name: offline gate (./init.sh)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Major tags track the current runner runtime (v4/v5 majors still target Node 20,
+      # which GitHub now force-runs on Node 24 and warns about).
+      - uses: actions/checkout@v7
 
       # init.sh hard-requires node; .nvmrc pins the major this config is verified against.
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
