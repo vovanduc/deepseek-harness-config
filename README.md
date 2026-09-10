@@ -11,7 +11,7 @@ settings.yaml        providers + default model + session defaults   (symlinked t
 .env.example         credential template                            (copied to ~/.dsh/.env once)
 dsh.version          the dsh build this config is verified against
 skills/              SKILL.md bundles linked into ~/.dsh/skills
-scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live model call
+scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
 docs/                models, modes, troubleshooting
 ```
 

@@ -82,4 +82,7 @@ fi
 
 # --- 5. verify --------------------------------------------------------------
 say "verifying"
-"$REPO/scripts/doctor.sh"
+if ! "$REPO/scripts/doctor.sh"; then
+  warn "doctor reported issues. On a fresh machine that is usually just the key:"
+  warn "  \$EDITOR ~/.dsh/.env   # then re-run scripts/doctor.sh"
+fi

@@ -17,6 +17,13 @@ likelihood:
 `echo $OPENCODE_GO_API_KEY` in the same shell you launch dsh from tells you which layer you are
 hitting.
 
+## `GET /models` returns 200 even with a wrong key
+
+This gateway lists models without validating the key; only an inference request is authenticated.
+Never diagnose a credential with `curl .../models` — `scripts/doctor.sh` posts one real completion
+for exactly this reason. A bogus key shows up as `401 Invalid API key` on
+`POST /chat/completions`, not on `/models`.
+
 ## `400 ... MissingSessionID`
 
 The OpenCode Go gateway routes by client session and refuses any request without the header. Keep

@@ -43,15 +43,27 @@ fi
 # --- credential -------------------------------------------------------------
 key_env="$(grep -E '^\s+apiKeyEnv:' "$DSH_HOME/settings.yaml" | head -1 | awk '{print $2}')"
 key_env="${key_env:-OPENCODE_GO_API_KEY}"
+placeholder_re='^(sk-replace-me|changeme|your-.*key.*|xxx+)$'
 if [ -n "${!key_env:-}" ]; then
-  ok "$key_env set in the current environment"
+  if [[ "${!key_env:-}" =~ $placeholder_re ]]; then
+    bad "$key_env is set but still the placeholder value"
+  else
+    ok "$key_env set in the current environment"
+  fi
 elif [ -s "$DSH_HOME/.env" ] && grep -qE "^${key_env}=..*" "$DSH_HOME/.env"; then
-  ok "$key_env present in $DSH_HOME/.env"
+  value="$(grep -E "^${key_env}=" "$DSH_HOME/.env" | head -1 | cut -d= -f2-)"
+  if [[ "$value" =~ $placeholder_re ]]; then
+    bad "$key_env in $DSH_HOME/.env is still the placeholder — put the real key in"
+  else
+    ok "$key_env present in $DSH_HOME/.env"
+  fi
 else
   bad "$key_env missing — add it to $DSH_HOME/.env (see .env.example)"
 fi
 
-# --- live model reachability ------------------------------------------------
+# --- live model call --------------------------------------------------------
+# One real completion, not a model listing: this gateway answers GET /models with
+# 200 even for a bogus key, so only an inference request proves anything.
 if command -v curl >/dev/null 2>&1; then
   key="${!key_env:-}"
   if [ -z "$key" ] && [ -s "$DSH_HOME/.env" ]; then
@@ -59,17 +71,29 @@ if command -v curl >/dev/null 2>&1; then
   fi
   base="$(grep -E '^\s+baseURL:' "$DSH_HOME/settings.yaml" | head -1 | awk '{print $2}')"
   base="${base:-https://opencode.ai/zen/go/v1}"
-  if [ -z "$key" ]; then
-    meh "skipping the live call: no key on hand"
+  model="$(grep -E '^\s+- id:' "$DSH_HOME/settings.yaml" | head -1 | awk '{print $3}')"
+  model="${model:-deepseek-flash}"
+  sess="$(grep -E '^\s+x-opencode-session:' "$DSH_HOME/settings.yaml" | head -1 | awk '{print $2}')"
+
+  if [ -z "$key" ] || [[ "$key" =~ $placeholder_re ]]; then
+    meh "skipping the live call: no usable key"
   else
-    code="$(curl -s -o /dev/null -w '%{http_code}' -m 30 "$base/models" \
-      -H "Authorization: Bearer $key")"
+    out="$(mktemp)"
+    args=(-s -o "$out" -w '%{http_code}' -m 45 "$base/chat/completions"
+          -H "Authorization: Bearer $key" -H 'Content-Type: application/json')
+    [ -n "$sess" ] && args+=(-H "x-opencode-session: $sess")
+    code="$(curl "${args[@]}" \
+      -d "{\"model\":\"$model\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}")"
     case "$code" in
-      200) ok "GET $base/models -> 200" ;;
-      401|403) bad "GET $base/models -> $code (key rejected or out of quota)" ;;
-      000) meh "GET $base/models -> no response (offline?)" ;;
-      *) meh "GET $base/models -> $code" ;;
+      200)
+        if grep -q '"choices"' "$out"; then ok "inference on $model -> 200"
+        else meh "inference on $model -> 200 but an unexpected body"; fi ;;
+      400) bad "inference -> 400 ($(head -c 120 "$out"))" ;;
+      401|403) bad "inference -> $code (key rejected or out of quota)" ;;
+      000) meh "inference -> no response (offline?)" ;;
+      *) meh "inference -> $code" ;;
     esac
+    rm -f "$out"
   fi
 else
   meh "curl not available; skipping the live call"
