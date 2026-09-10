@@ -3,8 +3,9 @@
 My [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) configuration, kept
 in git so a second machine starts in the same state as the first.
 
-Everything here is dsh-only: providers, default model, session defaults, skills. Secrets are never
-committed — credentials live in `~/.dsh/.env`, which is gitignored.
+Everything here is dsh-only: providers, default model, session defaults, skills — plus the delivery
+harness (`AGENTS.md`, `feature_list.json`, `knowledge/`). Secrets are never committed — credentials
+live in `~/.dsh/.env`, which is gitignored.
 
 ```
 settings.yaml        providers + default model + session defaults   (symlinked to ~/.dsh/settings.yaml)
@@ -12,8 +13,16 @@ settings.yaml        providers + default model + session defaults   (symlinked t
 dsh.version          the dsh build this config is verified against
 skills/              SKILL.md bundles linked into ~/.dsh/skills
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
-docs/                models, modes, troubleshooting
+docs/                models, modes, troubleshooting + specs/plans for a feature
+AGENTS.md            agent routing: startup workflow, working rules, Definition of Done
+init.sh              offline verification gate — run first, every session
+feature_list.json    feature state + evidence        progress.md      cross-session context
+session-handoff.md   handoff for a larger session
+knowledge/           durable knowledge (OKF): conventions, decisions, systems, runbooks, gotchas
 ```
+
+Working in this repo — human or agent — starts at [AGENTS.md](AGENTS.md); `./init.sh` must be green
+before any change, and durable facts belong in [knowledge/](knowledge/index.md), not in chat.
 
 ## On a new machine
 

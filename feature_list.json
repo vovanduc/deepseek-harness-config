@@ -1,0 +1,47 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Adopt the DCNET harness",
+      "description": "Add feature_list.json, progress.md, init.sh, session-handoff.md, docs/specs + docs/plans, and an AGENTS.md routing pointer so any session or machine restarts deterministically.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "./init.sh exit 0 (2026-09-10): bash -n on 3 scripts; feature_list 5 features / 1 in-progress; settings.yaml default opencode-go/deepseek-flash + dsh --profile headless --dump-config composes; 6 skill bundles; shellcheck clean. validate-harness.mjs 100/100, bottleneck none.",
+      "spec": "knowledge/decisions/adopt-harness-and-okf.md"
+    },
+    {
+      "id": "feat-002",
+      "name": "Seed the OKF knowledge bundle",
+      "description": "Create knowledge/ (OKF v0.1: index + log + per-directory indexes) with concepts for the repo's conventions, decisions, systems, domain glossary, runbooks and gotchas.",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "knowledge/ (2026-09-10): index.md + log.md + 6 category indexes + 18 concepts (3 conventions, 3 decisions, 3 systems, 1 domain, 3 runbooks, 5 gotchas); all internal links resolve (link check).",
+      "spec": "knowledge/decisions/adopt-harness-and-okf.md"
+    },
+    {
+      "id": "feat-003",
+      "name": "CI runs the verification gate on push",
+      "description": "Add a GitHub Actions workflow that runs ./init.sh on push and pull request, so the offline baseline cannot rot between sessions. Doctor's live-inference check stays out of CI (no key in the runner).",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": "",
+      "plan": "docs/plans/YYYY-MM-DD-ci-verification.md"
+    },
+    {
+      "id": "feat-004",
+      "name": "Script the ponytail skill update",
+      "description": "skills/README.md documents a manual copy of upstream SKILL.md files. Add scripts/update-ponytail.sh that fetches a pinned upstream release and diffs it, so the update is repeatable instead of hand-run.",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "doctor.sh --json for automation",
+      "description": "Give scripts/doctor.sh a machine-readable mode (one JSON object, stable keys) so init.sh, CI, or a setup script can consume the readiness result instead of parsing coloured text.",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}
