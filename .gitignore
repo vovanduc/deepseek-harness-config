@@ -1,0 +1,13 @@
+# Never commit real credentials.
+.env
+.credentials.yaml
+*.local.yaml
+*.bak
+
+# dsh runtime state, when this repo is used as DSH_HOME itself.
+profiles/
+storages/
+logs/
+.agent-presets/
+
+.DS_Store

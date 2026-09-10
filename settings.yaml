@@ -1,0 +1,59 @@
+# DeepSeek Harness settings — the file dsh reads as $DSH_HOME/settings.yaml.
+# install.sh symlinks it into ~/.dsh/settings.yaml, so edits here are live for the
+# running server (adapters re-read on the next request; no restart needed).
+
+# ─── Providers and models ────────────────────────────────────────────────────
+# Every route is a `llm-pi-ai.providers.<id>` entry. The key IS the provider id
+# and it is permanent: sessions, model defaults and credential references record
+# it. To rename one, add the new route and delete the old.
+#
+# `opencode-go` is the OpenCode Go plan. It serves DeepSeek and other families
+# behind one OpenAI-compatible endpoint, and it refuses any request that does not
+# carry a per-client session header (`MissingSessionID`).
+llm-pi-ai:
+  providers:
+    opencode-go:
+      displayName: OpenCode Go
+      api: openai-completions
+      baseURL: https://opencode.ai/zen/go/v1
+      # Name of the environment variable holding the key; the value itself never
+      # lives in this file. Resolution order: launch env -> ~/.dsh/.credentials.yaml
+      # -> <cwd>/.env -> ~/.dsh/.env. See .env.example.
+      apiKeyEnv: OPENCODE_GO_API_KEY
+      headers:
+        x-opencode-session: deepseek-harness-config
+      compat:
+        # This gateway rejects the `developer` role and reads `max_tokens`.
+        supportsDeveloperRole: false
+        maxTokensField: max_tokens
+      models:
+        - id: deepseek-flash
+          name: DeepSeek V4.1 Flash
+          contextWindow: 1048576
+          maxTokens: 65536
+        - id: deepseek-v4-pro
+          name: DeepSeek V4 Pro
+          contextWindow: 1048576
+          maxTokens: 65536
+        - id: glm-5.3
+          name: GLM 5.3
+          contextWindow: 200000
+          maxTokens: 32768
+
+# ─── Defaults for new sessions ───────────────────────────────────────────────
+# Read when a session is created; running sessions keep what they started with.
+agent-default-model:
+  provider: opencode-go
+  model: deepseek-flash
+
+# standard | ptc | minimal | cordis — see docs/modes.md
+agent-presets:
+  default: standard
+
+# workspace-write = sandboxed writes + approval prompt
+# danger-full-access = no sandbox, no prompt (see docs/modes.md)
+permission:
+  defaultPreset: workspace-write
+
+ui-theme:
+  preference: dark
