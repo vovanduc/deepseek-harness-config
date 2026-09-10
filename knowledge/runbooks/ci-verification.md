@@ -35,6 +35,12 @@ python3 -m pip install pyyaml   # only if your python lacks it
 
 A red badge means: read `gh run view --log-failed`, or just run `./init.sh` locally — it is the same gate.
 
+# Maintenance
+
+Action majors track the runner runtime — currently `@v7`. The older `v4`/`v5` majors still target
+Node 20, which GitHub force-runs on Node 24 and flags with a deprecation annotation on every run.
+Bump all three actions together, then re-run the workflow to confirm the annotation is gone.
+
 # Related
 
 [../decisions/init-stays-offline.md](../decisions/init-stays-offline.md) · [verify-change.md](verify-change.md) · [../index.md](../index.md)

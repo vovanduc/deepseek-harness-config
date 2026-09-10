@@ -23,8 +23,8 @@
       "name": "CI runs the verification gate on push",
       "description": "Add a GitHub Actions workflow that runs ./init.sh on push and pull request, so the offline baseline cannot rot between sessions. Doctor's live-inference check stays out of CI (no key in the runner).",
       "dependencies": ["feat-001"],
-      "status": "in-progress",
-      "evidence": "",
+      "status": "done",
+      "evidence": "./init.sh exit 0 (2026-09-10) with the new CI guard; GitHub Actions run 34457516258 on a5d29af -> success in 9s, no annotations; negative tests: dropping the ./init.sh step, dropping the PyYAML step, or adding a secrets reference each fail the gate, with and without PyYAML on PATH.",
       "plan": "docs/plans/2026-09-10-ci-verification.md",
       "spec": "docs/specs/2026-09-10-ci-verification-design.md"
     },
