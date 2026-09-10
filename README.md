@@ -16,6 +16,7 @@ dsh.version          the dsh build this config is verified against
 .nvmrc               Node major pinned for CI (22)
 skills/              SKILL.md bundles linked into ~/.dsh/skills
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
+scripts/update-ponytail.sh  sync skills/ from the pinned upstream ponytail release
 docs/                models, modes, troubleshooting + specs/plans for a feature
 AGENTS.md            agent routing: startup workflow, working rules, Definition of Done
 init.sh              offline verification gate — run first, every session

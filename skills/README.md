@@ -13,13 +13,28 @@ Linked into `$DSH_HOME/skills` by `install.sh`, so every project on the machine 
 
 ## Origin
 
-Adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) v4.9.0, MIT —
-see `LICENSE-ponytail-upstream`. Only the `SKILL.md` layer is carried over: upstream's Claude
+Adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), MIT — see
+`LICENSE-ponytail-upstream`. Only the `SKILL.md` layer is carried over: upstream's Claude
 Code / opencode plugin hooks (mode tracker, statusline, subagent re-injection) do **not** run here,
 so the mode is not sticky — the agent picks the skill up when the task matches its description, or
 when you ask for "ponytail mode" in so many words.
 
-To update: copy `skills/*/SKILL.md` from a newer upstream release over these directories.
+## Updating
+
+The upstream ref is pinned in `scripts/update-ponytail.sh` (`UPSTREAM_REF`); this file deliberately
+does not repeat a version, so the two cannot disagree. The local files are byte-identical to that ref.
+
+```bash
+./scripts/update-ponytail.sh                          # report drift (exit 1 when behind)
+./scripts/update-ponytail.sh --apply                  # copy the upstream files over the local ones
+./scripts/update-ponytail.sh --ref v4.10.0 --apply    # try a newer release
+```
+
+After applying a newer ref, set `UPSTREAM_REF` to it in the script and commit. `git` is the undo:
+review with `git diff -- skills`, revert with `git checkout -- skills`.
+
+Only `skills/*/SKILL.md` and `LICENSE` are synced — not upstream's built `.openclaw/skills/` copy,
+and not the plugin hooks.
 
 ## Adding your own
 

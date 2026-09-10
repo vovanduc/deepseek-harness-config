@@ -33,8 +33,10 @@
       "name": "Script the ponytail skill update",
       "description": "skills/README.md documents a manual copy of upstream SKILL.md files. Add scripts/update-ponytail.sh that fetches a pinned upstream release and diffs it, so the update is repeatable instead of hand-run.",
       "dependencies": ["feat-001"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "./scripts/update-ponytail.sh exit 0 (2026-09-10): six skills + LICENSE byte-identical to the pin v4.9.0; --ref v4.8.4 -> exit 1 with ponytail (2 changed lines) and ponytail-help (6); --apply --ref v4.8.4 rewrote exactly those two files and git checkout -- skills restored the tree; --apply at the pin changed nothing; unknown ref -> exit 2; bash -n + shellcheck clean.",
+      "spec": "docs/specs/2026-09-10-ponytail-update-script-design.md",
+      "plan": "docs/plans/2026-09-10-ponytail-update-script.md"
     },
     {
       "id": "feat-005",
