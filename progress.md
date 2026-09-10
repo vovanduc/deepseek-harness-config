@@ -56,7 +56,7 @@
 - [x] `./init.sh` → `exit 0`: 3 scripts parse; 5 features / 1 in-progress; `settings.yaml` default `opencode-go/deepseek-flash` + `dsh --dump-config` composes; 6 skill bundles; shellcheck clean.
 - [x] `./scripts/doctor.sh` → `status: READY (6 ok, 0 warn)`, inference on `deepseek-flash` → 200.
 - [x] `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` → `Overall: 100/100`, bottleneck none.
-- [x] `git log --oneline -1` → this session's commit (see `session-handoff.md`).
+- [x] Feature commit `5ad1bcd` on `main`, pushed to `origin/main`.
 
 ## Notes for Next Session
 

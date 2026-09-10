@@ -4,7 +4,7 @@
 
 - Goal: adopt the full DCNET workflow (harness state + OKF knowledge layer) in this config repo, commit, push.
 - Current status: complete — both features of this session are `done`, repo is clean and pushed.
-- Branch / commit: `main` @ this session's commit.
+- Branch / commit: `main` @ `5ad1bcd`.
 
 ## Completed This Session
 
@@ -21,7 +21,7 @@
 | Offline gate | `./init.sh` | exit 0 | bash -n, JSON, YAML + default model, skills, shellcheck |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Machine check | `./scripts/doctor.sh` | `status: READY (6 ok, 0 warn)` | live inference `deepseek-flash -> 200` |
-| History | `git log --oneline -3` | commit on `main` | pushed to `origin/main` |
+| History | `git log --oneline -3` | `5ad1bcd` on `main` | pushed to `origin/main` |
 
 `./init.sh` is the portable gate (no credential needed); `doctor.sh` proves this particular machine can reach the model.
 
