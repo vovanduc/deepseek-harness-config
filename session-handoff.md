@@ -4,7 +4,7 @@
 
 - Goal: adopt the full DCNET workflow (harness state + OKF knowledge layer), put the gate in CI, and make the ponytail skill sync repeatable.
 - Current status: complete — `feat-001` … `feat-004` are `done`; repo clean and pushed.
-- Branch / commit: `main` — the `feat-004` commit (exact hash and CI run recorded in `progress.md`).
+- Branch / commit: `main` @ `5db3486` (feat-004), with the evidence commit on top.
 
 ## Completed This Session
 
@@ -24,7 +24,7 @@
 | Ponytail sync @ pin | `./scripts/update-ponytail.sh` | exit 0 | six skills + LICENSE byte-identical to `v4.9.0` |
 | Ponytail drift | `./scripts/update-ponytail.sh --ref v4.8.4` | exit 1 | `ponytail` 2 lines, `ponytail-help` 6 lines |
 | Ponytail apply | `--apply --ref v4.8.4`, then `git checkout -- skills` | restored | rewrote exactly the two drifting files |
-| CI (GitHub) | `gh run watch` on `a5d29af`, `c5a1b9d` | success | 9s / 12s, no annotations |
+| CI (GitHub) | `gh run watch` on `a5d29af`, `c5a1b9d`, `5db3486` | success | 9s / 12s / 9s, no annotations |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Machine check | `./scripts/doctor.sh` | `status: READY (6 ok, 0 warn)` | live inference `deepseek-flash -> 200` |
 

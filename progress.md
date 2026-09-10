@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-10 16:00 (+07)
+**Last Updated:** 2026-09-10 16:05 (+07)
 **Active Feature:** none — `feat-004` completed this session; next session picks `feat-005`
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
@@ -74,7 +74,7 @@
 - [x] `feat-004` local tests: `./scripts/update-ponytail.sh` → exit 0 with six skills + LICENSE `identical` at the pin `v4.9.0`; `--ref v4.8.4` → exit 1 (`ponytail` 2 changed lines, `ponytail-help` 6); `--apply --ref v4.8.4` rewrote exactly those two files and `git checkout -- skills` restored the tree byte-identical; `--apply` at the pin changed nothing; unknown ref → exit 2; `bash -n` + `shellcheck -S warning` clean.
 - [x] `./scripts/doctor.sh` → `status: READY (6 ok, 0 warn)`, inference on `deepseek-flash` → 200.
 - [x] `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` → `Overall: 100/100`, bottleneck none.
-- [x] GitHub Actions runs green on `main`: [34457516258](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34457516258) (`a5d29af`) and [34457635034](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34457635034) (`c5a1b9d`).
+- [x] GitHub Actions runs green on `main`: [34457516258](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34457516258) (`a5d29af`), [34457635034](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34457635034) (`c5a1b9d`), [34458177413](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34458177413) (`5db3486`, feat-004).
 - [x] Knowledge links: 0 broken.
 
 ## Notes for Next Session
