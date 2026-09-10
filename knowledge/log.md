@@ -25,3 +25,4 @@ title: Knowledge change log
 2026-09-10 — gotcha/compat-flags — added: developer role + max_tokens field.
 2026-09-10 — gotcha/empty-yaml-value-refused — added: empty value fails the parse.
 2026-09-10 — gotcha/hand-declared-models-text-only — added: images need `input: [text, image]`.
+2026-09-10 — runbook/ci-verification — added: GitHub Actions runs `./init.sh`; the PyYAML step is load-bearing; `init.sh` now fails if the wiring is removed.

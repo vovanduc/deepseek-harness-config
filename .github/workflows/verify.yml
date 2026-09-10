@@ -1,0 +1,37 @@
+# The offline verification gate: the same ./init.sh a session runs before touching
+# anything. Deliberately no credential and no live model call — see
+# knowledge/decisions/init-stays-offline.md and knowledge/runbooks/ci-verification.md.
+name: verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  init:
+    name: offline gate (./init.sh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # init.sh hard-requires node; .nvmrc pins the major this config is verified against.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # init.sh skips the settings.yaml cross-check when PyYAML is absent, and the
+      # Ubuntu image does not guarantee python3-yaml — install it so the check runs.
+      - name: PyYAML for the settings.yaml cross-check
+        run: python3 -m pip install pyyaml
+
+      - name: Run the offline gate
+        run: ./init.sh

@@ -1,5 +1,7 @@
 # deepseek-harness-config
 
+[![verify](https://github.com/vovanduc/deepseek-harness-config/actions/workflows/verify.yml/badge.svg)](https://github.com/vovanduc/deepseek-harness-config/actions/workflows/verify.yml)
+
 My [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) configuration, kept
 in git so a second machine starts in the same state as the first.
 
@@ -11,6 +13,7 @@ live in `~/.dsh/.env`, which is gitignored.
 settings.yaml        providers + default model + session defaults   (symlinked to ~/.dsh/settings.yaml)
 .env.example         credential template                            (copied to ~/.dsh/.env once)
 dsh.version          the dsh build this config is verified against
+.nvmrc               Node major pinned for CI (22)
 skills/              SKILL.md bundles linked into ~/.dsh/skills
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
 docs/                models, modes, troubleshooting + specs/plans for a feature
@@ -19,10 +22,12 @@ init.sh              offline verification gate — run first, every session
 feature_list.json    feature state + evidence        progress.md      cross-session context
 session-handoff.md   handoff for a larger session
 knowledge/           durable knowledge (OKF): conventions, decisions, systems, runbooks, gotchas
+.github/workflows/   CI: runs ./init.sh on push and pull request
 ```
 
 Working in this repo — human or agent — starts at [AGENTS.md](AGENTS.md); `./init.sh` must be green
-before any change, and durable facts belong in [knowledge/](knowledge/index.md), not in chat.
+before any change and CI runs the same gate on every push and pull request. Durable facts belong in
+[knowledge/](knowledge/index.md), not in chat.
 
 ## On a new machine
 

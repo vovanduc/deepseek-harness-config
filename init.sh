@@ -12,6 +12,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO"
 
 step() { printf '\n=== %s ===\n' "$1"; }
+fail() { printf '  FAIL %s\n' "$*" >&2; exit 1; }
 
 command -v node >/dev/null 2>&1 || { echo "FAIL: node is required (dsh needs Node 20+)"; exit 1; }
 
@@ -81,6 +82,35 @@ for (const d of dirs) {
 }
 console.log(`  ok ${dirs.length} skill bundle(s)`);
 JS
+
+step 'test: the CI workflow still runs this gate'
+CI_WORKFLOW='.github/workflows/verify.yml'
+[ -f "$CI_WORKFLOW" ] || fail "$CI_WORKFLOW is missing — CI must run the gate"
+[ -f .nvmrc ] || fail '.nvmrc is missing — CI needs a pinned Node major'
+grep -qE '^[[:space:]]*run:.*init\.sh' "$CI_WORKFLOW" || fail "$CI_WORKFLOW no longer runs ./init.sh"
+grep -q 'pip install pyyaml' "$CI_WORKFLOW" \
+  || fail "$CI_WORKFLOW must install PyYAML, or the settings.yaml cross-check silently skips there"
+if grep -q 'secrets\.' "$CI_WORKFLOW"; then
+  fail "$CI_WORKFLOW references secrets — this repo keeps credentials off CI"
+fi
+if python3 -c 'import yaml' >/dev/null 2>&1; then
+  python3 - <<'PY'
+import yaml
+wf = yaml.safe_load(open('.github/workflows/verify.yml'))
+# PyYAML implements YAML 1.1, where a bare `on:` key parses as boolean True.
+triggers = wf.get('on', wf.get(True))
+assert isinstance(triggers, dict), 'workflow has no on: triggers'
+for event in ('push', 'pull_request'):
+    assert event in triggers, f'missing trigger: {event}'
+jobs = wf['jobs']
+assert len(jobs) == 1, f'expected one job, found {len(jobs)}'
+steps = next(iter(jobs.values()))['steps']
+assert any('./init.sh' in s.get('run', '') for s in steps), 'no step runs ./init.sh'
+print('  ok verify.yml parses: push + pull_request, 1 job, runs ./init.sh')
+PY
+else
+  echo '  skip: python3 + PyYAML not available for the workflow parse'
+fi
 
 if command -v shellcheck >/dev/null 2>&1; then
   step 'lint: shellcheck'
