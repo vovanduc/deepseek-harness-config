@@ -113,6 +113,12 @@ JS
 step 'test: install.sh still applies the plugin manifest'
 grep -qF '"$REPO/scripts/install-plugins.sh"' install.sh || fail 'install.sh no longer calls scripts/install-plugins.sh'
 
+step 'test: plugin pre-flight is wired'
+[ -x scripts/plugin-preflight.sh ] || fail 'scripts/plugin-preflight.sh is missing or not executable'
+grep -qF '"$REPO/scripts/plugin-preflight.sh"' scripts/install-plugins.sh \
+  || fail 'install-plugins.sh no longer pre-flights plugins before adding them'
+echo '  ok plugin-preflight.sh is executable and called by install-plugins.sh'
+
 step 'test: the CI workflow still runs this gate'
 CI_WORKFLOW='.github/workflows/verify.yml'
 [ -f "$CI_WORKFLOW" ] || fail "$CI_WORKFLOW is missing — CI must run the gate"

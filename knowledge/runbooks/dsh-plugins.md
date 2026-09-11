@@ -10,6 +10,22 @@ tags: [plugins, dsh, runbook]
 reconciles `dsh.profile.bundles`. The profile directory is **not** in git, so `plugins.json` is what
 makes a second machine match.
 
+# Pre-flight (before anything touches a profile)
+
+```bash
+./scripts/plugin-preflight.sh <name>@<version> [--dsh-version <v>]
+```
+
+Reads the published manifest via `npm view <spec> dsh --json` and refuses a plugin that cannot work
+on the pinned release: `dsh.compatibility.dshReleases` must list the target release as `compatible`,
+and every `dsh.client.inject` id must exist in the pinned install (a directory under its
+`node_modules`, or a literal string under its `@deepseek-ai/`). Missing install → inconclusive, not a
+failure. `install-plugins.sh` runs it before every `add` and counts a rejection as *blocked*;
+`--skip-preflight` overrides. A git source cannot be pre-flighted → rejected unless overridden.
+
+It reads metadata only, so it cannot see a bare service name that exists only in compiled client
+code — a pass is a filter, not a guarantee.
+
 # Apply
 
 ```bash
@@ -64,8 +80,9 @@ ever adds — it never uninstalls.
 - **A client half built for another dsh release kills the whole web boot.** `dsh-diagram@0.4.0`
   injects a `conversationEvents` client service that dsh `0.1.5-rc.1` does not provide: the layer
   composes (`--dump-default-config` is happy), then the browser shows `Failed to load plugins` and
-  renders nothing. Only the browser catches it — so after any plugin change, check the UI, not just
-  the config dump. Details and the compatibility check: [../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md](../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md).
+  renders nothing. The metadata-level cases are now refused before install by the pre-flight above; a
+  bare service name that lives only in compiled client code still needs the browser after a restart.
+  Details: [../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md](../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md).
 
 # The set here
 

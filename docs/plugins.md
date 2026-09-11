@@ -41,6 +41,28 @@ rejects `latest`, `*`, `^`, `~`, a missing field, or a duplicate entry.
 
 `install.sh` runs this automatically; a failure warns instead of aborting, so re-run the script.
 
+## Pre-flight
+
+A correct version pin is not a compatible one — that is what `dsh-diagram` proved. So before anything
+touches a profile, each plugin is checked against the pinned dsh by
+[`scripts/plugin-preflight.sh`](../scripts/plugin-preflight.sh), from its published manifest only:
+
+| Check | Rule |
+|---|---|
+| `dsh.compatibility.dshReleases` | when the plugin declares the map, the pinned release must be listed as `compatible` |
+| `dsh.client.inject` | every id must exist in the pinned install — a directory, or a literal string under its `@deepseek-ai/` |
+
+```bash
+./scripts/plugin-preflight.sh dsh-mermaid@0.4.0                  # 0 = ok
+./scripts/plugin-preflight.sh dsh-diagram@0.4.0                  # 1, names the missing release
+./scripts/plugin-preflight.sh <spec> --dsh-version 0.1.1-rc.2    # check against another release
+```
+
+`install-plugins.sh` skips a rejected plugin, counts it as *blocked*, and exits non-zero;
+`--skip-preflight` is the deliberate override. The pre-flight reads metadata and never executes plugin
+code, so it **cannot** see a bare service name that lives only in compiled client code: a pass is a
+filter, not a guarantee, and the browser after a restart remains the final gate.
+
 ## Adding or bumping a plugin
 
 1. Add or edit one entry in `plugins.json`: `{ "profile": …, "package": "name@x.y.z", "source": … }`.

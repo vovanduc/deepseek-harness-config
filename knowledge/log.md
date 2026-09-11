@@ -34,3 +34,5 @@ title: Knowledge change log
 2026-09-11 — runbook/dsh-plugins — updated: the boot-killing failure mode (a client half built for another release) and the set actually declared here. `dsh-diagram` dropped from `plugins.json`.
 2026-09-11 — runbook/dsh-plugins — added: `plugins.json` as the source of truth, apply/verify/restart, and the `prepare`/`allowBuilds` failure mode.
 2026-09-11 — gotcha/dsh-mermaid-npm-name-collision — added: the npm name is held by MrmoLabs, not the AKS1st repo a plugin list links.
+2026-09-11 — runbook/dsh-plugins — updated: added the pre-flight (`dsh.compatibility.dshReleases` + `dsh.client.inject` resolved against the pinned install) and its limits; the applier now blocks a rejected plugin.
+2026-09-11 — script/plugin-preflight — added: the offline oracle is the pinned install under `$(npm root -g)/@deepseek-ai/dsh/node_modules`, and `npm view <spec> dsh --json` exposes the manifest without installing.

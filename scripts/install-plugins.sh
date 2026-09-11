@@ -15,17 +15,22 @@ cd "$REPO"
 DSH_HOME="${DSH_HOME:-$HOME/.dsh}"
 MANIFEST='plugins.json'
 dry_run=0
+skip_preflight=0
 
 usage() {
   cat <<'EOF'
-Usage: scripts/install-plugins.sh [--dry-run]
+Usage: scripts/install-plugins.sh [--dry-run] [--skip-preflight]
 
-  (no flags)  install every plugin in plugins.json that is missing or at another version
-  --dry-run   print what would be installed, change nothing
-  --help      this text
+  (no flags)        install every plugin in plugins.json that is missing or at another version
+  --dry-run         print what would be installed, change nothing
+  --skip-preflight  install even when the pre-flight cannot verify the plugin
+  --help            this text
+
+Each plugin is pre-flighted against the pinned dsh first (scripts/plugin-preflight.sh):
+a client half built for another dsh release composes fine and then kills the web boot.
 
 Forwarded to dsh: dsh plugin --profile <profile> add <package@version>.
-Exit codes: 0 applied (or nothing to do), 1 at least one plugin failed, 2 usage error.
+Exit codes: 0 applied (or nothing to do), 1 something failed or was blocked, 2 usage error.
 EOF
 }
 
@@ -35,6 +40,7 @@ fail() { printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 2; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) dry_run=1 ;;
+    --skip-preflight) skip_preflight=1 ;;
     --help|-h) usage; exit 0 ;;
     *) echo "error: unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -74,6 +80,7 @@ try {
 applied=0
 current=0
 failed=0
+blocked=0
 
 while IFS=$'\t' read -r profile spec; do
   [ -n "$profile" ] || continue
@@ -88,6 +95,14 @@ while IFS=$'\t' read -r profile spec; do
       continue
       ;;
   esac
+
+  if [ "$skip_preflight" -eq 0 ]; then
+    if ! "$REPO/scripts/plugin-preflight.sh" "$spec"; then
+      warn "pre-flight rejected $profile/$name@$version — not installed (override with --skip-preflight)"
+      blocked=$((blocked + 1))
+      continue
+    fi
+  fi
 
   if [ "$dry_run" -eq 1 ]; then
     printf '  would add %s/%s@%s\n' "$profile" "$name" "$version"
@@ -106,13 +121,13 @@ done <<< "$plan"
 
 echo
 if [ "$dry_run" -eq 1 ]; then
-  echo "dry run: $applied to add, $current already installed"
+  echo "dry run: $applied to add, $current already installed, $blocked blocked by pre-flight"
   exit 0
 fi
 
-echo "plugins: $applied added, $current already installed, $failed failed"
-if [ "$failed" -ne 0 ]; then
-  warn "some plugins did not install — re-run $0"
+echo "plugins: $applied added, $current already installed, $failed failed, $blocked blocked by pre-flight"
+if [ "$failed" -ne 0 ] || [ "$blocked" -ne 0 ]; then
+  warn "not every plugin in $MANIFEST was applied — review the output above"
   exit 1
 fi
 if [ "$applied" -gt 0 ]; then

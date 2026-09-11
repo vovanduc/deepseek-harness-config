@@ -19,6 +19,7 @@ skills/              SKILL.md bundles linked into ~/.dsh/skills
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
 scripts/update-ponytail.sh  sync skills/ from the pinned upstream ponytail release
 scripts/install-plugins.sh  apply plugins.json to the local dsh profiles
+scripts/plugin-preflight.sh  reject a plugin the pinned dsh cannot run, before it touches a profile
 docs/                models, modes, plugins, troubleshooting + specs/plans for a feature
 AGENTS.md            agent routing: startup workflow, working rules, Definition of Done
 init.sh              offline verification gate — run first, every session

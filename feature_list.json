@@ -55,6 +55,16 @@
       "evidence": "plugins.json + scripts/install-plugins.sh (2026-09-11): installed dsh-mermaid@0.4.0 and dsh-diagram@0.4.0 into the web profile (exit 0, 2 added); dsh --profile web --dump-default-config shows # == dsh-mermaid and # == dsh-diagram; re-run reports 0 added / 2 already installed; init.sh guards fail on latest, a range, a duplicate, a missing field and a dropped install.sh call; ./init.sh exit 0; harness audit 100/100. Amended after the first UI restart (2026-09-11): dsh-diagram@0.4.0 killed the web boot (client injects `conversationEvents`, absent from dsh 0.1.5-rc.1; boot showed 'Failed to load plugins'), so it was removed from the profile and from plugins.json; with dsh-mermaid@0.4.0 alone the UI boots and a ```mermaid fence rendered as an SVG (3 nodes, 7 labels) with Diagram/Code toggle, fullscreen and Download SVG -> mermaid-flowchart.svg (13,379 B). Set is now 1 plugin over the web profile.",
       "spec": "docs/specs/2026-09-11-plugins-manifest-design.md",
       "plan": "docs/plans/2026-09-11-plugins-manifest.md"
+    },
+    {
+      "id": "feat-007",
+      "name": "Pre-flight plugin compatibility",
+      "description": "Refuse to install a plugin whose published manifest says it cannot run on the pinned dsh: check dsh.compatibility.dshReleases and resolve every dsh.client.inject id against the pinned install before anything touches a profile.",
+      "dependencies": ["feat-006"],
+      "status": "done",
+      "evidence": "scripts/plugin-preflight.sh + wiring (2026-09-11): dsh-mermaid@0.4.0 -> exit 0; dsh-diagram@0.4.0 -> exit 1 naming compatibility [0.1.0-rc.6 0.1.0-rc.8 0.1.1-rc.1 0.1.1-rc.2] vs pinned 0.1.5-rc.1; same spec with --dsh-version 0.1.1-rc.2 -> exit 1 via check B alone (@deepseek-ai/dsh-client-runtime unresolved), so the two checks are independent; unpinned -> exit 2; git/unresolvable -> exit 1. End-to-end: with dsh-diagram temporarily back in plugins.json the applier exited 1 ('blocked by pre-flight') and left the profile untouched (dependencies still [dsh-mermaid], no node_modules/dsh-diagram); --skip-preflight is the override. init.sh fails when the call is removed or the script loses +x. ./init.sh exit 0; harness audit 100/100.",
+      "spec": "docs/specs/2026-09-11-plugin-preflight-design.md",
+      "plan": "docs/plans/2026-09-11-plugin-preflight.md"
     }
   ]
 }

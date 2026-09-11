@@ -2,65 +2,63 @@
 
 ## Current Objective
 
-- Goal: make the dsh **plugin set** reproducible from git, seeded with `dsh-mermaid` (and, until the first UI restart proved otherwise, `dsh-diagram`).
-- Current status: complete — `feat-001` … `feat-004` and `feat-006` are `done`; the plugin set was amended after its first restart; repo clean and pushed.
-- Branch / commit: `main` @ `afd7cea` (feat-006), with the evidence commit on top.
+- Goal: make the dsh plugin set reproducible from git, then stop an incompatible plugin from ever reaching a profile.
+- Current status: complete — `feat-001` … `feat-004`, `feat-006` and `feat-007` are `done`; repo clean and pushed.
+- Branch / commit: `main` @ this turn's commit (hash recorded in `progress.md`).
 
 ## Completed This Session
 
 - [x] `plugins.json` — the plugin set, version-pinned, with `source` provenance.
-- [x] `scripts/install-plugins.sh` — compares each profile's `dependencies` and applies the difference via `dsh plugin … add`; `--dry-run` plans only.
-- [x] `install.sh` calls the applier after the skills step (a failure warns, it does not abort).
-- [x] `init.sh` guards the manifest (exact pins, no duplicates, required fields) and the `install.sh` wiring.
-- [x] Installed `dsh-mermaid@0.4.0` into the `web` profile; verified the layer with `--dump-default-config`.
-- [x] Restarted the `web` profile non-interactively and checked the browser: `dsh-mermaid` renders (SVG, Diagram/Code toggle, fullscreen, Download SVG).
-- [x] `dsh-diagram@0.4.0` removed after that restart — its client half needs a `conversationEvents` service the pinned dsh does not have, and it killed the whole web boot. Entry dropped from `plugins.json`, trap recorded.
-- [x] `docs/plugins.md` + `knowledge/runbooks/dsh-plugins.md` + `knowledge/gotchas/dsh-mermaid-npm-name-collision.md` + `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`.
+- [x] `scripts/install-plugins.sh` — reconciles each profile against the manifest; `--dry-run`, `--skip-preflight`.
+- [x] `scripts/plugin-preflight.sh` — refuses a plugin the pinned dsh cannot run, from its published manifest.
+- [x] `install.sh` calls the applier after the skills step; `init.sh` guards the manifest and the whole wiring chain.
+- [x] `dsh-mermaid@0.4.0` installed and **verified in the browser** (SVG, Code/Diagram toggle, fullscreen, Download SVG).
+- [x] `dsh-diagram@0.4.0` removed after the restart proved it kills the web boot; the trap is recorded and now caught by the pre-flight.
+- [x] `docs/plugins.md` + `knowledge/runbooks/dsh-plugins.md` + the two plugin gotchas.
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| Offline gate | `./init.sh` | exit 0 | 5 scripts, 6 features, 1 plugin pinned, CI wiring, shellcheck |
+| Offline gate | `./init.sh` | exit 0 | 6 scripts, 7 features, 1 plugin pinned, pre-flight + CI wiring, shellcheck |
 | Manifest guards | mutate `plugins.json` / `install.sh`, run `./init.sh` | exit 1 (×5) | `@latest`, `^range`, duplicate, missing field, dropped call |
-| Plugin install | `./scripts/install-plugins.sh` | exit 0, `2 added` | both plugins went in; `dsh-diagram` was removed again after the restart below |
-| Plugin layers | `dsh --profile web --dump-default-config` | `# == dsh-mermaid` | the dump proved the layer, not that it loads |
-| Idempotency | `./scripts/install-plugins.sh` (re-run) | `0 added, 1 already installed` | pins exact, so a bump re-applies |
+| Pre-flight fixtures | `./scripts/plugin-preflight.sh …` | 0 / 1 / 1 | mermaid ok; diagram names the omitted release; `--dsh-version 0.1.1-rc.2` fails on inject alone |
+| Pre-flight end-to-end | `dsh-diagram` temporarily back in `plugins.json`, run the applier | exit 1, profile untouched | `dependencies` still `['dsh-mermaid']`; no `node_modules/dsh-diagram` |
+| Escape hatch | `./scripts/install-plugins.sh --dry-run --skip-preflight` | `would add` | deliberate override works |
+| Pre-flight guards | drop the call / remove `+x`, run `./init.sh` | exit 1 (×2) | restored byte-identical |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Machine check | `./scripts/doctor.sh` | `status: READY (6 ok, 0 warn)` | live inference `deepseek-flash -> 200` |
 | Knowledge links | link check over `knowledge/**` + docs | 0 broken | |
 
-**Now verified** (2026-09-11, after the restart this handoff asked for):
-
-- `dsh-mermaid`: a ```mermaid fence rendered in the browser — SVG with 3 nodes (Tải đơn → Duyệt →
-  Gửi hàng) and 7 labels, Code/Diagram toggle round-trips, Fullscreen (zoom 285% / Fit / Close),
-  Download SVG → `mermaid-flowchart.svg` (13,379 B).
-- `dsh-diagram`: **cannot run**. Its layer composed, but the client entry never activated
-  (`dsh-diagram: pending (waiting for service: conversationEvents)`) and the UI died with
-  `Failed to load plugins`. `conversationEvents` does not exist in dsh 0.1.5-rc.1. Removed from the
-  profile and from `plugins.json`; there is no `/`-menu `canvas-diagram` entry.
-- The restart did **not** end the session (it ran in an `omp` session, not inside `dsh web`).
+**Verified in the browser earlier this session** (after the restart this handoff previously asked for):
+`dsh-mermaid` rendered a ```mermaid fence — SVG with 3 nodes and 7 labels, Code/Diagram toggle
+round-trips, Fullscreen (zoom 285% / Fit / Close), Download SVG → `mermaid-flowchart.svg` (13,379 B).
 
 ## Files Changed
 
-- `plugins.json`, `scripts/install-plugins.sh`
+- `plugins.json`, `scripts/install-plugins.sh`, `scripts/plugin-preflight.sh`
 - `install.sh`, `init.sh`
-- `docs/plugins.md`, `docs/specs/2026-09-11-plugins-manifest-design.md`, `docs/plans/2026-09-11-plugins-manifest.md`
-- `knowledge/runbooks/dsh-plugins.md`, `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`, `knowledge/index.md`, `knowledge/log.md`, category indexes
+- `docs/plugins.md`
+- `docs/specs/2026-09-11-plugins-manifest-design.md`, `docs/plans/2026-09-11-plugins-manifest.md`
+- `docs/specs/2026-09-11-plugin-preflight-design.md`, `docs/plans/2026-09-11-plugin-preflight.md`
+- `knowledge/runbooks/dsh-plugins.md`, `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`, `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`, `knowledge/index.md`, `knowledge/log.md`, category indexes
 - `README.md`, `feature_list.json`, `progress.md`, `session-handoff.md`
 
 ## Decisions Made
 
 - Plugins are declared in `plugins.json`; the profile directory is machine-local and never committed → `knowledge/runbooks/dsh-plugins.md`
-- npm `dsh-mermaid@0.4.0` (MrmoLabs) over `AKS1st/dsh-mermaid` v0.5.0 — no `prepare` build, so no machine-local `allowBuilds` edit → `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`
-- The applier warns rather than aborts in `install.sh`, matching how the doctor is treated
-- `./init.sh` stays offline; plugin and ponytail syncs need network and stay out of CI
+- A version pin is not a compatibility guarantee: the pre-flight blocks, and the browser confirms → `docs/specs/2026-09-11-plugin-preflight-design.md`
+- Fail closed on an unverifiable source (a git spec cannot be pre-flighted) with `--skip-preflight` as the explicit override
+- The pre-flight reads metadata only and never executes plugin code; it cannot see a bare service name that lives in compiled client code
+- npm `dsh-mermaid@0.4.0` (MrmoLabs) over `AKS1st/dsh-mermaid` v0.5.0 → `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`
+- `./init.sh` stays offline; plugin, pre-flight and ponytail syncs need network and stay out of CI
 
 ## Blockers / Risks
 
 - None blocking.
-- The plugins are on disk but **not live** until the `web` profile restarts.
+- `dsh-diagram` stays out until a release lists dsh 0.1.5 in `dsh.compatibility.dshReleases`; there is no `/`-menu `canvas-diagram` entry today.
 - `scripts/install-plugins.sh` only adds: removing an entry from `plugins.json` does not uninstall it, so removal is two steps (`dsh plugin … remove` plus the manifest edit).
+- The pre-flight is a filter, not a proof; after any plugin change, still check the browser (the running-server recipe is in `docs/plugins.md`).
 - Third-party plugin code is not audited here; pins and provenance are, and the sandbox confines writes only.
 - `superpowers:*` skills are still not installed, so specs/plans are written by hand (noted in each spec).
 - `feat-005` remains queued; `install.sh` still does not check the Node major (a candidate feature).
