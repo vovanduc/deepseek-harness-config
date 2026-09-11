@@ -20,6 +20,49 @@ pinned versions.
 Every entry publishes a `dsh.bundle` patch, except `dsh-find-plugin`, which is host-only. Versions are
 pinned exactly; `./init.sh` rejects `latest`, `*`, `^`, `~`, a missing field, or a duplicate entry.
 
+## How to use them
+
+**`dshmarket` — Settings → *Plugin Market*.** No CLI needed. Browse/search the community catalog
+(2 300+ entries, category filters, star counts), one-click install with live progress, a *Themes* tab
+(install → active immediately, one click to switch), per-plugin update checks, uninstall, and hot
+disable/enable that writes a `disabled:` row into the profile's `cordis.patch.yml` (HMR re-composes in
+~1 s, no restart). *Diagnostics* shows the load order and conflicts; *Backup & restore* exports the
+plugin list as JSON. The market manages itself from **Settings → Plugins → Plugin configuration**.
+
+> **Market installs drift from `plugins.json`.** Anything installed through the market lands in the
+> profile only, so a second machine will not have it. Add the entry to `plugins.json` (after the
+> pre-flight) to make it reproducible — the applier is add-only and will not fight the market.
+
+**`dsh-find-plugin` — ask the agent.** It registers the `find_dsh_plugin` tool: a live GitHub search
+over the public `dsh-plugin` topic, ranked by stars, enriched with the curated list's descriptions. It
+returns ready-to-run `dsh plugin add` lines. Prompt shape: *"find me a dsh plugin for X"* /
+*"có plugin dsh nào làm Y không?"*. Reference documentation (the curated index) is a plain HTTP fetch
+through `web_fetch`, which needs no key either.
+
+**`modsearch` — three agent tools, no key required.**
+`web_search` is the ordinary search tool; the layer above reroutes the `web` row's `searchProvider`
+to `modsearch`, so the credential-less DeepSeek engine is bypassed. `read_page` reads one specific
+URL, `x_search` searches X/Twitter. Keyless engines (local, `antigravity-cli`, `grok-cli`) work out
+of the box; adding `TAVILY_API_KEY` / `EXA_API_KEY` / `FIRECRAWL_API_KEY` unlocks the keyed engines.
+Config card: **Settings → Plugins → Plugin configuration → Search engine (ModSearch)**; route health
+via `curl -b <cookie> http://127.0.0.1:4319/modsearch/config` or `npx @liustack/modsearch doctor`.
+
+**`dsh-vision-toolkit` — Settings → *Vision*.** Pick the protocol (OpenAI Chat Completions or
+Anthropic Messages), base URL, model, API key. The default is the vendor's free service
+(`https://vision.anionex.me/v1`, `gemini-3.7-flash`; the key is the literal string
+`https://agent-vision.anionex.me`). Tools:
+
+| Local (never uploads the image) | Remote (sends the image bytes to the configured API) |
+|---|---|
+| `vision_crop`, `vision_trace`, `vision_pixel_diff`, `vision_dominant_colors`, `vision_extract_foreground`, `vision_html_screenshot` | `vision_glance`, `vision_ground`, `vision_detect`, `vision_long_screenshot_ocr` |
+
+Loading the `vision-skills` Skill activates them; if the visual tools are still missing in a session,
+call `vision_toolkit_activate` once — it disappears after success. Inputs must resolve inside the
+session workspace, the platform temp dir, or an `allowedDirs` entry; outputs stay in the
+plugin-managed output directory. The managed runtime is a Python venv at
+`$DSH_HOME/cache/dsh-vision-toolkit/python/<hash>` (pillow, numpy, vtracer); if it is absent the first
+use prepares it (up to 10 minutes, needs network + `uv`).
+
 > **Why these four were added (2026-09-11).** Three gaps in ordinary use: no in-harness way to
 > discover a plugin, a built-in `web_search` that fails with *"no API key for `DEEPSEEK_API_KEY`"*, and
 > hand-declared routes (`deepseek-flash`, `deepseek-v4-pro`, `glm-5.3`) that accept **text only**.
@@ -28,10 +71,10 @@ pinned exactly; `./init.sh` rejects `latest`, `*`, `^`, `~`, a missing field, or
 > `dsh.compatibility.dshReleases["0.1.5-rc.1"] = compatible` — for the others the pre-flight reports
 > `note: no dsh.compatibility declared`, which is a filter, not a guarantee.
 >
-> `modsearch` and `dsh-vision-toolkit` each have their own credential/key setup; this repo installs
-> them but does not configure them. `pnpm` prints missing-peer warnings (`@deepseek-ai/cordis`,
-> `@deepseek-ai/dsh-tools`, `react`, …) for every one of them — the host supplies those, so they are
-> warnings, not failures.
+> `modsearch` needs no key for its default engines and `dsh-vision-toolkit` ships a free default
+> service; this repo installs both but configures neither, so they run on those vendor defaults.
+> `pnpm` prints missing-peer warnings (`@deepseek-ai/cordis`, `@deepseek-ai/dsh-tools`, `react`, …)
+> for every one of them — the host supplies those, so they are warnings, not failures.
 
 > **Refused by the pre-flight, 2026-09-11.** `dsh-vision-router@2.1.5` (⭐775),
 > `dsh-web-search-pro@0.1.11` and `dsh-free-search@0.4.24` (⬇2 141) all inject
@@ -129,10 +172,13 @@ serving a plugin:
 ```bash
 # token = the one-time URL from the startup log; an existing cookie works too
 curl -s -c /tmp/j -o /dev/null "http://127.0.0.1:4319/?token=$TOKEN"
-curl -s -b /tmp/j http://127.0.0.1:4319/ | grep -o '{"id":"dsh-[^"]*"'      # served roster
+curl -s -b /tmp/j http://127.0.0.1:4319/ | grep -oE '\{"id":"[^"]*","url":"[^"]*"'   # served roster
 curl -s -b /tmp/j -o /dev/null -w '%{http_code}\n' \
-  "http://127.0.0.1:4319/plugins/??dsh-mermaid/client.js&rev=<rev>"          # 200 = client served
+  "http://127.0.0.1:4319/plugins/??dsh-mermaid/client.js&rev=<rev>"                 # 200 = client served
 ```
+
+Grepping `"id":"dsh-` alone reports **false negatives** for every scoped plugin
+(`@liustack/modsearch`, `@anionex/dsh-vision-toolkit`) — match the individual name, not the prefix.
 
 The served page carries the plugin registry inline (each entry has `url` and `inject`), so a plugin
 missing from that list, or a `client.js` that 404s, is caught without a browser. Full proof of a

@@ -63,8 +63,10 @@
 
 ## Blockers / Risks
 
-- `modsearch` has no key configured here; `dsh-vision-toolkit` picked up a read-only key source on its
-  own. Neither has answered a real request yet.
+- `modsearch` runs on keyless CLI/local engines (verified with a real search); keyed engines need
+  `TAVILY_API_KEY` / `EXA_API_KEY` / `FIRECRAWL_API_KEY`. `dsh-vision-toolkit` runs on the vendor's
+  free default service (verified end-to-end through the bundled CLI + managed venv).
+- Market installs land in the profile only — add the pin to `plugins.json` to make one reproducible.
 - Two of the five entries declare no `dsh.compatibility` map at all — a pre-flight pass is a filter,
   and the restart is what actually settled them (all four client halves load).
 - The `@deepseek-ai/dsh-client-runtime` family block (`plugin-fit-vs-popularity`) will need revisiting
@@ -82,10 +84,8 @@
 
 ## Recommended Next Step
 
-- **Credential the two new tools and exercise them.** `modsearch` needs a search key
-  (`Settings → Plugins → Search engine (ModSearch)`), `dsh-vision-toolkit` a vision key
-  (`Settings → Vision`); then run one search and one image call from a session. The restart is done —
-  the five bundles are live. Deeper plugin
-  decisions (Memory vs this repo's OKF, Skills/Workflow vs `dcnet-workflow`, Security, Runtime) are
-  listed in `progress.md` → What's Next, with the ranked catalog at `/tmp/adp/report.md` until it is
-  moved into `knowledge/`.
+- **Exercise the agent-side tools from an ordinary session.** `find_dsh_plugin`, `read_page`,
+  `x_search` and the `vision_*` set are registered and the vision runtime is ready; usage for each is
+  written up in `docs/plugins.md` → *How to use them*. Deeper plugin decisions (Memory vs this repo's
+  OKF, Skills/Workflow vs `dcnet-workflow`, Security, Runtime) are listed in `progress.md` → What's
+  Next, with the ranked catalog at `/tmp/adp/report.md` until it is moved into `knowledge/`.

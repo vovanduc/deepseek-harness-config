@@ -62,8 +62,9 @@
   `knowledge/gotchas/plugin-fit-vs-popularity.md`. A dsh bump may or may not restore the id.
 - [ ] The pre-flight reads metadata only: a bare service name that exists only in compiled `client.js`
   still needs the browser. Two of the five installed plugins declare no compatibility map at all.
-- [ ] `modsearch` has no key configured here, and `dsh-vision-toolkit` reports a read-only key source
-  it picked up on its own — neither is exercised by a request yet. Installed ≠ configured ≠ working.
+- [ ] `modsearch` runs on keyless CLI/local engines (verified); keyed engines stay unused until a
+  `TAVILY_API_KEY` / `EXA_API_KEY` / `FIRECRAWL_API_KEY` is added. `dsh-vision-toolkit` runs on the
+  vendor's free default service (verified reachable); a key is only needed for another provider.
 - [ ] Live inference is deliberately not part of `init.sh` or CI; `./scripts/doctor.sh` covers it on a real machine.
 - [ ] `danger-full-access` remains available as a preset; the repo documents the risk but cannot enforce it.
 - [ ] `scripts/update-ponytail.sh`, `scripts/install-plugins.sh` and `scripts/plugin-preflight.sh` need network, so they stay out of CI and their drift is only noticed when someone runs them.
@@ -141,8 +142,20 @@
   contributed tabs *Plugin Market* (dshmarket), *Vision* (dsh-vision-toolkit, reports a read-only key
   source) and, under *Plugins*, *Search engine (ModSearch)*. `--dump-config` alone would not have
   shown any of this.
-- [ ] Still unverified: that `modsearch` answers a live search query with its key, and that a vision
-  call returns — both need a real request from a session, which is not part of the restart.
+- [x] **`modsearch` verified working, keyless (2026-09-11).** A real `web_search` call from the running
+  session returned a cited result set (3 sources / 10 citations) — the built-in DeepSeek engine is
+  bypassed by the `web` row's `searchProvider: modsearch` (visible in `--dump-config`). All engines
+  report `hasKey:false` in `/modsearch/config`; the CLI-backed ones (`antigravity-cli`, `grok-cli`,
+  `local`) carry the route.
+- [x] **`dsh-vision-toolkit` runtime + free service verified (2026-09-11).** Managed venv present at
+  `$DSH_HOME/cache/dsh-vision-toolkit/python/*` (78 MB, py3.14, pillow 12.3.0 / numpy 2.4.6 /
+  vtracer 0.6.15, `uv` manager, `runtime.json` matches the pinned upstream commit `bc9803d`). Ran the
+  bundled upstream CLI on a real screenshot through that venv:
+  `VISION_BASE_URL=https://vision.anionex.me/v1 … bin/glance --query … shot.webp` → correct answer in
+  9 s. The vendor endpoint answers `401 invalid_api_key` until the free key
+  (`https://agent-vision.anionex.me`) is passed, which is what the plugin's defaults do.
+- [ ] Tools still unexercised *through the harness*: `find_dsh_plugin`, `read_page`, `x_search` and the
+  `vision_*` set — they are registered host-side, and calling them is a per-session action.
 
 ## Notes for Next Session
 
@@ -150,5 +163,7 @@ The route is `AGENTS.md` → `./init.sh` → `feature_list.json` → `progress.m
 Reproducibility rests on four pins — `dsh.version`, `.nvmrc`, `plugins.json`, and the ponytail
 `UPSTREAM_REF`. The plugin pin grew from 1 to 5 this session, and the two filters that guard it are
 now written down: `npm view <spec> repository.url` for identity, `plugin-preflight.sh` for release
-compatibility. The profile restart is done and the five bundles are live; the next concrete step is
-credentialing `modsearch` and `dsh-vision-toolkit`, then exercising each with one real request.
+compatibility. The profile restart is done, the five bundles are live, and `modsearch` returns real
+search results with no key; the next concrete step is exercising `find_dsh_plugin`, `read_page`,
+`x_search` and the `vision_*` tools from an ordinary session — usage for each is in `docs/plugins.md`
+→ *How to use them*.
