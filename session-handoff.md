@@ -4,7 +4,7 @@
 
 - Goal: make the dsh **plugin set** reproducible from git, and seed it with `dsh-mermaid` + `dsh-diagram`.
 - Current status: complete — `feat-001` … `feat-004` and `feat-006` are `done`; repo clean and pushed.
-- Branch / commit: `main` @ the `feat-006` commit, with the evidence commit on top.
+- Branch / commit: `main` @ `afd7cea` (feat-006), with the evidence commit on top.
 
 ## Completed This Session
 
