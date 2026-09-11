@@ -94,7 +94,8 @@ ever adds — it never uninstalls.
 `plugins.json` declares five plugins for the `web` profile — `dsh-mermaid@0.4.0` (diagrams),
 `dshmarket@1.45.1` (the market inside Settings), `dsh-find-plugin@0.3.7` (host-only registry search),
 `@liustack/modsearch@5.10.2` (web search + fetch, because the built-in `web_search` has no key on this
-route) and `@anionex/dsh-vision-toolkit@0.1.44` (vision for the text-only routes).
+route — its own search needs an engine key, its fetch works keyless) and
+`@anionex/dsh-vision-toolkit@0.1.44` (vision for the text-only routes).
 `dsh-diagram` is deliberately absent for the reason above.
 
 # Finding candidates

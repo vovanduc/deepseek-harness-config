@@ -14,7 +14,7 @@ pinned versions.
 | `web` | `dsh-mermaid@0.4.0` | renders ` ```mermaid ` fences as theme-aware SVG diagrams in chat | [MrmoLabs/dsh-mermaid](https://github.com/MrmoLabs/dsh-mermaid) |
 | `web` | `dshmarket@1.45.1` | the plugin market inside Settings: browse, search, install, update, switch themes | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
 | `web` | `dsh-find-plugin@0.3.7` | host-only tool: the agent searches the curated registry and hands back a ready `dsh plugin add` line | [awesome-dsh-plugin/dsh-find-plugin](https://github.com/awesome-dsh-plugin/dsh-find-plugin) |
-| `web` | `@liustack/modsearch@5.10.2` | web search + page fetch returning cited JSON, standing in for the credential-less built-in `web_search` | [liustack/modsearch](https://github.com/liustack/modsearch) |
+| `web` | `@liustack/modsearch@5.10.2` | web search + page fetch returning cited JSON, replacing the built-in `web_search` that has no key on this route — search needs an engine key here, fetch does not | [liustack/modsearch](https://github.com/liustack/modsearch) |
 | `web` | `@anionex/dsh-vision-toolkit@0.1.44` | vision tools for text-only routes: image Q&A, comparison, OCR, crops, pixel diff | [Anionex/dsh-vision-toolkit](https://github.com/Anionex/dsh-vision-toolkit) |
 
 Every entry publishes a `dsh.bundle` patch, except `dsh-find-plugin`, which is host-only. Versions are
@@ -101,13 +101,16 @@ use prepares it (up to 10 minutes, needs network + `uv`).
 > **Why these four were added (2026-09-11).** Three gaps in ordinary use: no in-harness way to
 > discover a plugin, a built-in `web_search` that fails with *"no API key for `DEEPSEEK_API_KEY`"*, and
 > hand-declared routes (`deepseek-flash`, `deepseek-v4-pro`, `glm-5.3`) that accept **text only**.
-> `dshmarket` + `dsh-find-plugin` close the first, `modsearch` the second, `dsh-vision-toolkit` the
-> third. All five entries passed `./scripts/plugin-preflight.sh`; only `dsh-vision-toolkit` *declares*
+> `dshmarket` + `dsh-find-plugin` close the first, `modsearch` the second (once an engine key is set —
+> its keyless search route is refused here), `dsh-vision-toolkit` the third. All five entries passed
+> `./scripts/plugin-preflight.sh`; only `dsh-vision-toolkit` *declares*
 > `dsh.compatibility.dshReleases["0.1.5-rc.1"] = compatible` — for the others the pre-flight reports
 > `note: no dsh.compatibility declared`, which is a filter, not a guarantee.
 >
-> `modsearch` needs no key for its default engines and `dsh-vision-toolkit` ships a free default
-> service; this repo installs both but configures neither, so they run on those vendor defaults.
+> `modsearch` and `dsh-vision-toolkit` ship with vendor defaults but **not equal ones**: page fetch
+> (`read_page`) works out of the box, while web search resolves to a keyless engine that this machine's
+> IP is refused from — so `web_search` needs its own engine key. Measured state and setup steps are in
+> *How to use them* below. This repo installs both and configures neither.
 > `pnpm` prints missing-peer warnings (`@deepseek-ai/cordis`, `@deepseek-ai/dsh-tools`, `react`, …)
 > for every one of them — the host supplies those, so they are warnings, not failures.
 

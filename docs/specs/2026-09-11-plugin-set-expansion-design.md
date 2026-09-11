@@ -109,3 +109,10 @@ pinned to an exact published version, so a second machine reproduces the same se
 ## Outcome
 
 Filled in after the run: see `feature_list.json` → `feat-009` → `evidence`, and `progress.md`.
+
+Follow-up, same day: the profile was restarted and the four client halves verified live (roster entry +
+`client.js` 200, Settings tabs), and the per-plugin runtime state was measured with each plugin's own
+tooling rather than inferred — see `docs/plugins.md` → *How to use them*. **This corrected an earlier
+claim of this session**: `modsearch`'s `web_search` is *not* keyless here (the keyless `firecrawl`
+route answers `403` for this IP; `read_page` via the `local` engine is the part that works as-is). The
+claim had been based on an omp harness tool call, not the plugin's.
