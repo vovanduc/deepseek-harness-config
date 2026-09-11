@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-11 13:11 (+07)
-**Active Feature:** none — `feat-009` closed this session; the backlog is empty
+**Last Updated:** 2026-09-11 13:25 (+07) — `web` profile restarted, the five plugins are live
+**Active Feature:** none — `feat-009` closed; the backlog is empty
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
@@ -20,7 +20,7 @@
 - [x] `feat-006`: `plugins.json` + `scripts/install-plugins.sh` make the plugin set reproducible.
 - [x] `feat-007`: `scripts/plugin-preflight.sh` refuses a plugin the pinned dsh cannot run.
 - [x] `feat-008`: `scripts/check-node.sh` — Node 20 floor from `.nvmrc`, run before anything is created.
-- [x] `feat-009`: plugin set expanded from 1 to 5 on the `web` profile after a pre-flight survey of the curated list — installed and composed, **not yet live** (needs a `dsh web` restart).
+- [x] `feat-009`: plugin set expanded from 1 to 5 on the `web` profile after a pre-flight survey of the curated list — installed, composed, and **live** since the `dsh web` restart (roster + `client.js` 200 + Settings tabs).
 - [x] `./init.sh` passes; harness audit 100/100; knowledge links resolve.
 
 ### What's In Progress
@@ -50,8 +50,9 @@
 ## Blockers / Risks
 
 - [x] ~~No CI yet~~ — closed by `feat-003`.
-- [x] ~~The plugins installed on 2026-09-11 are on disk but not live~~ — closed for `dsh-mermaid` by
-  the first restart; **reopened for the four new plugins** the same way.
+- [x] ~~The plugins installed on 2026-09-11 are on disk but not live~~ — closed twice: `dsh-mermaid`
+  by the first restart, the other four by the 2026-09-11 13:2x restart (roster `client.js` → 200,
+  Settings shows *Plugin Market*, *Vision*, *Search engine (ModSearch)*).
 - [ ] `dsh-diagram` is unusable on the pinned dsh: its client needs a `conversationEvents` service
   that 0.1.5-rc.1 does not provide, and the failure is total (the web UI will not boot). Out of the
   manifest until a compatible release exists — `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`.
@@ -61,7 +62,8 @@
   `knowledge/gotchas/plugin-fit-vs-popularity.md`. A dsh bump may or may not restore the id.
 - [ ] The pre-flight reads metadata only: a bare service name that exists only in compiled `client.js`
   still needs the browser. Two of the five installed plugins declare no compatibility map at all.
-- [ ] `modsearch` and `dsh-vision-toolkit` need their own credentials; installed ≠ configured.
+- [ ] `modsearch` has no key configured here, and `dsh-vision-toolkit` reports a read-only key source
+  it picked up on its own — neither is exercised by a request yet. Installed ≠ configured ≠ working.
 - [ ] Live inference is deliberately not part of `init.sh` or CI; `./scripts/doctor.sh` covers it on a real machine.
 - [ ] `danger-full-access` remains available as a preset; the repo documents the risk but cannot enforce it.
 - [ ] `scripts/update-ponytail.sh`, `scripts/install-plugins.sh` and `scripts/plugin-preflight.sh` need network, so they stay out of CI and their drift is only noticed when someone runs them.
@@ -97,7 +99,8 @@
 
 - `plugins.json` — 4 new pinned entries (5 total on `web`)
 - `README.md` — the configuration table's plugin row
-- `docs/plugins.md` — the set table, the refusals, the discovery note, the not-live-yet warning
+- `docs/plugins.md` — the set table, the refusals, the discovery note, the live-status note, the
+  per-plugin `rev` trap in the roster recipe
 - `docs/specs/2026-09-11-plugin-set-expansion-design.md`, `docs/plans/2026-09-11-plugin-set-expansion.md`
 - `knowledge/runbooks/dsh-plugins.md`, `knowledge/gotchas/plugin-fit-vs-popularity.md`,
   `knowledge/gotchas/index.md`, `knowledge/log.md`
@@ -107,7 +110,7 @@
 
 ## Evidence of Completion
 
-- [x] `./init.sh` → `exit 0`: 7 scripts parse; 9 features, 1 in-progress; `settings.yaml` default
+- [x] `./init.sh` → `exit 0`: 7 scripts parse; 9 features, 0 in-progress; `settings.yaml` default
   `opencode-go/deepseek-flash`; 6 skill bundles; **5 plugins pinned**; pre-flight + Node + CI wiring
   guards pass; shellcheck clean.
 - [x] `feat-009` pre-flight survey (8 candidates, dsh `0.1.5-rc.1`): 5 ok — `dshmarket@1.45.1`,
@@ -126,9 +129,20 @@
   → `Overall: 100/100`, bottleneck none.
 - [x] Knowledge links: 129 checked across 57 markdown files, 0 broken.
 - [x] GitHub Actions green on the new commit: [34568962541](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34568962541) (`8695a33`, `feat-009`).
-- [ ] **Not verified:** that the four new client halves activate — that needs a `dsh web` restart,
-  which this session deliberately did not perform (the user is talking to the agent through that
-  server). `--dump-config` proves the host layer only.
+- [x] **Restart + live check (2026-09-11 13:2x).** `hub restart dsh-web` (`dsh web --port 4319
+  --no-open`, pid 15184, ready in 18 s, boot log clean — no plugin error). Served page HTTP 200 carries
+  a registry entry with `url` for `dsh-mermaid` (`rev=…-44`), `@liustack/modsearch` (`…-45`),
+  `dshmarket` (`…-50`) and `@anionex/dsh-vision-toolkit` (`…-55`); each `client.js` → `200`
+  (23 550 / 42 614 / 567 583 / 143 381 bytes). `dsh-find-plugin` has no client bundle by design
+  (host-only, patch `find-dsh-plugin`) — absent from the roster is correct, and the clean boot is its
+  activation evidence.
+- [x] **Screenshot (headless Chromium, `127.0.0.1:4319`).** UI renders normally — sidebar, workspaces,
+  composer, model label — **0 console errors**, no `Failed to load plugins`. Settings panel shows the
+  contributed tabs *Plugin Market* (dshmarket), *Vision* (dsh-vision-toolkit, reports a read-only key
+  source) and, under *Plugins*, *Search engine (ModSearch)*. `--dump-config` alone would not have
+  shown any of this.
+- [ ] Still unverified: that `modsearch` answers a live search query with its key, and that a vision
+  call returns — both need a real request from a session, which is not part of the restart.
 
 ## Notes for Next Session
 
@@ -136,4 +150,5 @@ The route is `AGENTS.md` → `./init.sh` → `feature_list.json` → `progress.m
 Reproducibility rests on four pins — `dsh.version`, `.nvmrc`, `plugins.json`, and the ponytail
 `UPSTREAM_REF`. The plugin pin grew from 1 to 5 this session, and the two filters that guard it are
 now written down: `npm view <spec> repository.url` for identity, `plugin-preflight.sh` for release
-compatibility. The next concrete step is the profile restart, followed by the shell-side roster check.
+compatibility. The profile restart is done and the five bundles are live; the next concrete step is
+credentialing `modsearch` and `dsh-vision-toolkit`, then exercising each with one real request.

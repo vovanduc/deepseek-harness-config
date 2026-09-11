@@ -113,8 +113,12 @@ A running profile keeps the bundle set it started with. After adding, removing, 
 stdout is a TTY (see `knowledge/gotchas/web-ui-exits-under-a-tty.md`). Ordinary `cordis.patch.yml`
 edits hot-reload instead — only bundle membership needs the restart.
 
-Installed but **not live** at the time of writing: `dshmarket`, `dsh-find-plugin`, `modsearch` and
-`dsh-vision-toolkit` are in the profile and compose, but the running server predates them.
+**Live since the 2026-09-11 restart.** All four new bundles run in the server on `:4319`: the served
+roster carries a client entry for `dsh-mermaid`, `dshmarket`, `@liustack/modsearch` and
+`@anionex/dsh-vision-toolkit` (each `client.js` → 200), the boot log is clean, and Settings renders
+the tabs they contribute — *Plugin Market*, *Vision*, and *Search engine (ModSearch)*. `dsh-find-plugin`
+is host-only and publishes no client bundle, so it appears in the composed tree and never in the roster;
+its activation is the error-free boot.
 
 ## Verify the restart actually took
 
@@ -133,6 +137,10 @@ curl -s -b /tmp/j -o /dev/null -w '%{http_code}\n' \
 The served page carries the plugin registry inline (each entry has `url` and `inject`), so a plugin
 missing from that list, or a `client.js` that 404s, is caught without a browser. Full proof of a
 plugin that renders is still the browser.
+
+Each entry's `url` carries **its own** `rev` — the tail differs per plugin (`…-44`, `…-45`, `…-50`,
+`…-55` in the 2026-09-11 run). Copy the `url` verbatim; reusing one plugin's `rev` on another gives a
+404 that looks like a missing bundle.
 
 ## Removing
 

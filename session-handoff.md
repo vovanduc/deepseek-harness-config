@@ -16,8 +16,8 @@
   5 pass, 3 blocked on the missing `@deepseek-ai/dsh-client-runtime` client service.
 - [x] `feat-009` — `plugins.json` grew from 1 to 5 pinned web plugins: `dshmarket@1.45.1`,
   `dsh-find-plugin@0.3.7`, `@liustack/modsearch@5.10.2`, `@anionex/dsh-vision-toolkit@0.1.44`
-  (alongside `dsh-mermaid@0.4.0`). Installed, composed, **not yet live** — a `dsh web` restart is the
-  next step.
+  (alongside `dsh-mermaid@0.4.0`). Installed, composed, and **live** after the follow-up `dsh web`
+  restart — verified from the shell (roster + `client.js` 200) and in the browser (`Settings` tabs).
 - [x] New knowledge: `gotcha/plugin-fit-vs-popularity` + a discovery section in `runbook/dsh-plugins`;
   `docs/plugins.md`, `README.md`, `knowledge/log.md` updated.
 
@@ -25,13 +25,17 @@
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| Offline gate | `./init.sh` | exit 0 | 9 features / 1 in-progress, 5 plugins pinned, shellcheck clean |
+| Offline gate | `./init.sh` | exit 0 | 9 features / 0 in-progress, 5 plugins pinned, shellcheck clean |
 | Pre-flight (pass) | `./scripts/plugin-preflight.sh <spec>` | exit 0 ×5 | `dshmarket`, `dsh-find-plugin`, `@liustack/modsearch`, `@liustack/modlens`, `@anionex/dsh-vision-toolkit` |
 | Pre-flight (blocked) | same, 3 candidates | exit 1 ×3 | `dsh-vision-router@2.1.5`, `dsh-web-search-pro@0.1.11`, `dsh-free-search@0.4.24` — unmet inject `@deepseek-ai/dsh-client-runtime` |
 | Apply | `./scripts/install-plugins.sh` | exit 0 | `4 added, 1 already installed, 0 failed, 0 blocked` |
 | Idempotent re-run | `./scripts/install-plugins.sh` | exit 0 | `0 added, 5 already installed, 0 failed, 0 blocked` |
 | Profile state | `dsh plugin --profile web list` | 5 packages | see the set in `docs/plugins.md` |
 | Host layers | `dsh --profile web --dump-default-config \| grep '# =='` | 5 plugin layers | host layer only, not proof the client half lives |
+| Restart | `hub restart dsh-web` | ready in 18 s, clean log | pid 15184; `dsh web --port 4319 --no-open` |
+| Served roster | `curl -b /tmp/dsh-j2 http://127.0.0.1:4319/` | 200 | entries for `dsh-mermaid`, `dshmarket`, `@liustack/modsearch`, `@anionex/dsh-vision-toolkit`, each with its own `rev` |
+| Client bundles | `curl` each registry `url` | 200 ×4 | 23 550 / 567 583 / 42 614 / 143 381 bytes |
+| UI, headless Chromium | screenshot + `document.body.innerText` | renders, 0 console errors | Settings → *Plugin Market*, *Vision*, *Search engine (ModSearch)* |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Knowledge links | link check over `knowledge/**` + docs + README | 129 checked, 0 broken | 57 files |
 | CI | [run 34568962541](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34568962541) on `8695a33` | success | the same `./init.sh` gate the repo runs locally |
@@ -54,14 +58,15 @@
   → `docs/specs/2026-09-11-plugin-set-expansion-design.md`
 - `dshmarket` installed even though it is a nested market: it is the manager the list recommends and
   the only way to browse/update plugins without hand-editing the manifest.
-- No restart in this session — the user is talking to the agent through the running `web` server.
+- No restart during `feat-009` itself — the user was talking to the agent through the running `web`
+  server; the restart was done afterwards as a separate, explicit step (13:2x).
 
 ## Blockers / Risks
 
-- **Not live yet.** The four new bundles are installed and composed but the running server predates
-  them; the browser after a restart is the only proof that their client halves activate.
-- `modsearch` and `dsh-vision-toolkit` are installed but their credentials/keys are **not** configured.
-- Two of the five entries declare no `dsh.compatibility` map at all — a pre-flight pass is a filter.
+- `modsearch` has no key configured here; `dsh-vision-toolkit` picked up a read-only key source on its
+  own. Neither has answered a real request yet.
+- Two of the five entries declare no `dsh.compatibility` map at all — a pre-flight pass is a filter,
+  and the restart is what actually settled them (all four client halves load).
 - The `@deepseek-ai/dsh-client-runtime` family block (`plugin-fit-vs-popularity`) will need revisiting
   on a dsh bump; three popular plugins wait behind it.
 - `scripts/install-plugins.sh` only adds: removing an entry from `plugins.json` does not uninstall it.
@@ -77,8 +82,10 @@
 
 ## Recommended Next Step
 
-- **Restart `dsh web`, then prove the four plugins are served** with the roster recipe in
-  `docs/plugins.md`; then configure `modsearch` and `dsh-vision-toolkit` credentials. Deeper plugin
+- **Credential the two new tools and exercise them.** `modsearch` needs a search key
+  (`Settings → Plugins → Search engine (ModSearch)`), `dsh-vision-toolkit` a vision key
+  (`Settings → Vision`); then run one search and one image call from a session. The restart is done —
+  the five bundles are live. Deeper plugin
   decisions (Memory vs this repo's OKF, Skills/Workflow vs `dcnet-workflow`, Security, Runtime) are
   listed in `progress.md` → What's Next, with the ranked catalog at `/tmp/adp/report.md` until it is
   moved into `knowledge/`.

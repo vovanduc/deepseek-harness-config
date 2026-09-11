@@ -60,6 +60,11 @@ curl -s -b /tmp/j -o /dev/null -w '%{http_code}\n' \
 Every plugin's registry entry (`url`, `inject`) is inline in the served page, so a plugin that never
 made it into the running bundle set — or a `client.js` that 404s — is visible from the shell. A
 plugin's lazy assets sit under its own root too (e.g. `/dsh-mermaid/mermaid-runtime.js`, 3.4 MB).
+Each entry's `url` carries its **own** `rev` tail — fetch it verbatim, since borrowing another
+plugin's `rev` returns 404 for a bundle that is served fine.
+
+Verified end to end on 2026-09-11: `dsh-mermaid` `…-44`, `@liustack/modsearch` `…-45`,
+`dshmarket` `…-50`, `@anionex/dsh-vision-toolkit` `…-55`, all `200`.
 
 # Restart
 
