@@ -10,12 +10,13 @@ tags: [setup, runbook]
 git clone https://github.com/vovanduc/deepseek-harness-config ~/Code/deepseek-harness-config
 cd ~/Code/deepseek-harness-config
 ./init.sh              # offline baseline — must be green before anything else
-./install.sh           # pinned dsh, settings symlink, ~/.dsh/.env seed, skill links
+./scripts/check-node.sh # node ≥ 20 and matching .nvmrc (install.sh runs this itself, first)
+./install.sh           # pinned dsh, settings symlink, ~/.dsh/.env seed, skill links, plugins
 $EDITOR ~/.dsh/.env    # OPENCODE_GO_API_KEY=<real key>
-./scripts/doctor.sh    # expect: status: READY
+./scripts/doctor.sh    # expect: status: READY  (add --json for one machine-readable object)
 ```
 
-`install.sh --no-install` skips the global npm step. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`.
+`install.sh --no-install` skips the global npm step. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`. It runs `scripts/check-node.sh` before creating anything: a Node below 20 stops it there, and a major that differs from `.nvmrc` only warns.
 
 # Expected
 

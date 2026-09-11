@@ -20,6 +20,7 @@ scripts/doctor.sh    read-only health check: CLI, settings parse, credential, li
 scripts/update-ponytail.sh  sync skills/ from the pinned upstream ponytail release
 scripts/install-plugins.sh  apply plugins.json to the local dsh profiles
 scripts/plugin-preflight.sh  reject a plugin the pinned dsh cannot run, before it touches a profile
+scripts/check-node.sh  fail below the Node 20 floor, warn when node diverges from .nvmrc
 docs/                models, modes, plugins, troubleshooting + specs/plans for a feature
 AGENTS.md            agent routing: startup workflow, working rules, Definition of Done
 init.sh              offline verification gate — run first, every session
@@ -46,6 +47,7 @@ $EDITOR ~/.dsh/.env          # put the real key in
 `install.sh` installs the pinned `dsh` globally, symlinks `settings.yaml` into `~/.dsh/`, seeds
 `~/.dsh/.env` (mode 600) if absent, links the skills, applies the plugin set from `plugins.json`,
 then runs the doctor. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`.
+It stops before creating anything when `scripts/check-node.sh` finds a Node below 20.
 
 Because `settings.yaml` is a **symlink**, the file the running server reads is this repo's file:
 changes made in the web UI's Settings pages land here and are ready to `git commit`. The same holds

@@ -36,3 +36,6 @@ title: Knowledge change log
 2026-09-11 — gotcha/dsh-mermaid-npm-name-collision — added: the npm name is held by MrmoLabs, not the AKS1st repo a plugin list links.
 2026-09-11 — runbook/dsh-plugins — updated: added the pre-flight (`dsh.compatibility.dshReleases` + `dsh.client.inject` resolved against the pinned install) and its limits; the applier now blocks a rejected plugin.
 2026-09-11 — script/plugin-preflight — added: the offline oracle is the pinned install under `$(npm root -g)/@deepseek-ai/dsh/node_modules`, and `npm view <spec> dsh --json` exposes the manifest without installing.
+2026-09-11 — runbook/verify-change — updated: `doctor.sh --json` (one object, stable keys, identical verdict and exit code).
+2026-09-11 — script/doctor — added: `--json` emits `{status, ok, warn, fail, checks[]}`; `compose` is absent when `dsh` is not on PATH.
+2026-09-11 — script/check-node — added: Node 20 floor from `.nvmrc`, warn on a divergent major; `install.sh` runs it before creating anything.

@@ -119,6 +119,11 @@ grep -qF '"$REPO/scripts/plugin-preflight.sh"' scripts/install-plugins.sh \
   || fail 'install-plugins.sh no longer pre-flights plugins before adding them'
 echo '  ok plugin-preflight.sh is executable and called by install-plugins.sh'
 
+step 'test: the Node major check is wired'
+[ -x scripts/check-node.sh ] || fail 'scripts/check-node.sh is missing or not executable'
+grep -qF '"$REPO/scripts/check-node.sh"' install.sh || fail 'install.sh no longer checks the Node major'
+echo '  ok check-node.sh is executable and called by install.sh'
+
 step 'test: the CI workflow still runs this gate'
 CI_WORKFLOW='.github/workflows/verify.yml'
 [ -f "$CI_WORKFLOW" ] || fail "$CI_WORKFLOW is missing — CI must run the gate"

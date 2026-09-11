@@ -1,6 +1,7 @@
 # Troubleshooting
 
-`./scripts/doctor.sh` catches most of these. Run it first.
+`./scripts/doctor.sh` catches most of these. Run it first — add `--json` for one machine-readable
+object (`{status, ok, warn, fail, checks:[{id, status, message}]}`) instead of coloured text.
 
 ## `MISSING_CREDENTIAL: ... resolves OPENCODE_GO_API_KEY, which is not set`
 

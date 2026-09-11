@@ -20,11 +20,15 @@ die() { printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
 
 stamp() { date +%Y%m%d-%H%M%S; }
 
+# --- 0. node ----------------------------------------------------------------
+# Node below the floor used to pass `command -v node` and fail much later, far
+# from the cause. This runs before anything is created.
+if ! "$REPO/scripts/check-node.sh"; then
+  die "Node is missing or too old for this dsh — fix the message above, then re-run"
+fi
+
 # --- 1. the dsh CLI ---------------------------------------------------------
 if [ "$SKIP_INSTALL" -eq 0 ]; then
-  if ! command -v node >/dev/null 2>&1; then
-    die "node is not installed. dsh needs Node 20+ (nvm, brew install node, ...)."
-  fi
   current="$(dsh --version 2>/dev/null || echo none)"
   if [ "$current" != "$VERSION" ]; then
     say "installing @deepseek-ai/dsh@$VERSION (found: $current)"

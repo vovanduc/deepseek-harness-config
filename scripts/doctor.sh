@@ -1,42 +1,114 @@
 #!/usr/bin/env bash
 # Check that DeepSeek Harness is installed and that this machine can reach the
 # configured model. Read-only: it never writes configuration.
+#
+#   ./scripts/doctor.sh          human-readable report: coloured, printed live
+#   ./scripts/doctor.sh --json   one JSON object on stdout — status/ok/warn/fail/checks[]
+#   ./scripts/doctor.sh --help
+#
+# Exit: 0 ready, 1 not ready, 2 usage error — identical in both modes.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DSH_HOME="${DSH_HOME:-$HOME/.dsh}"
 VERSION="$(tr -d '[:space:]' < "$REPO/dsh.version")"
 pass=0; fail=0; warn=0
+json=0
+results=()
 
-ok()   { printf '  \033[32mok\033[0m    %s\n' "$*"; pass=$((pass+1)); }
-bad()  { printf '  \033[31mFAIL\033[0m  %s\n' "$*"; fail=$((fail+1)); }
-meh()  { printf '  \033[33mwarn\033[0m  %s\n' "$*"; warn=$((warn+1)); }
+usage() {
+  cat <<'EOF'
+Usage: scripts/doctor.sh [--json]
 
-echo "dsh doctor — repo $REPO"
+  (no flags)  coloured report, printed as each check runs
+  --json      one JSON object on stdout: {status, ok, warn, fail, checks:[{id,status,message}]}
+  --help      this text
+
+Check ids: cli, settings, compose, credential, inference, skills.
+`compose` is absent when `dsh` is not on PATH; every other id is always present.
+Exit codes: 0 ready, 1 not ready, 2 usage error.
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --json) json=1 ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "error: unknown argument: $arg" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+record() {  # <ok|warn|fail> <check-id> <message>
+  local status="$1" id="$2" message="$3"
+  case "$status" in
+    ok)   pass=$((pass + 1)) ;;
+    warn) warn=$((warn + 1)) ;;
+    fail) fail=$((fail + 1)) ;;
+  esac
+  results+=("$status|$id|$message")
+  [ "$json" -eq 1 ] && return 0
+  case "$status" in
+    ok)   printf '  \033[32mok\033[0m    %s\n' "$message" ;;
+    warn) printf '  \033[33mwarn\033[0m  %s\n' "$message" ;;
+    fail) printf '  \033[31mFAIL\033[0m  %s\n' "$message" ;;
+  esac
+}
+
+finish() {
+  if [ "$json" -eq 1 ]; then
+    printf '%s\n' "${results[@]}" | node -e '
+const { readFileSync } = require("node:fs");
+const checks = readFileSync(0, "utf8").split("\n").filter(Boolean).map((line) => {
+  const [status, id, ...rest] = line.split("|");
+  return { id, status, message: rest.join("|") };
+});
+const tally = (s) => checks.filter((c) => c.status === s).length;
+const report = {
+  status: tally("fail") === 0 ? "READY" : "NOT_READY",
+  ok: tally("ok"),
+  warn: tally("warn"),
+  fail: tally("fail"),
+  checks,
+};
+process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+'
+    [ "$fail" -eq 0 ] || exit 1
+    return 0
+  fi
+  echo
+  if [ "$fail" -eq 0 ]; then
+    printf 'status: \033[32mREADY\033[0m (%d ok, %d warn)\n' "$pass" "$warn"
+  else
+    printf 'status: \033[31mNOT READY\033[0m (%d ok, %d warn, %d fail)\n' "$pass" "$warn" "$fail"
+    exit 1
+  fi
+}
+
+[ "$json" -eq 1 ] || echo "dsh doctor — repo $REPO"
 
 # --- CLI --------------------------------------------------------------------
 if command -v dsh >/dev/null 2>&1; then
   have="$(dsh --version 2>/dev/null | tr -d '[:space:]')"
-  if [ "$have" = "$VERSION" ]; then ok "dsh $have on PATH"
-  else meh "dsh $have on PATH, repo pins $VERSION"; fi
+  if [ "$have" = "$VERSION" ]; then record ok cli "dsh $have on PATH"
+  else record warn cli "dsh $have on PATH, repo pins $VERSION"; fi
 else
-  bad "dsh not on PATH — npm install -g @deepseek-ai/dsh@$VERSION"
+  record fail cli "dsh not on PATH — npm install -g @deepseek-ai/dsh@$VERSION"
 fi
 
 # --- settings ---------------------------------------------------------------
 if [ -L "$DSH_HOME/settings.yaml" ] || [ -f "$DSH_HOME/settings.yaml" ]; then
-  ok "$DSH_HOME/settings.yaml present"
+  record ok settings "$DSH_HOME/settings.yaml present"
 else
-  bad "$DSH_HOME/settings.yaml missing — run ./install.sh"
-  echo; echo "summary: $pass ok, $warn warn, $fail fail"; exit 1
+  record fail settings "$DSH_HOME/settings.yaml missing — run ./install.sh"
+  finish
 fi
 
 # The composed tree is the only real parse check: a bad key fails here.
 if command -v dsh >/dev/null 2>&1; then
   if dsh --profile headless --dump-config >/dev/null 2>&1; then
-    ok "settings compose (dsh --profile headless --dump-config)"
+    record ok compose "settings compose (dsh --profile headless --dump-config)"
   else
-    bad "settings do not compose — run the command above to see the error"
+    record fail compose "settings do not compose — run the command above to see the error"
   fi
 fi
 
@@ -46,19 +118,19 @@ key_env="${key_env:-OPENCODE_GO_API_KEY}"
 placeholder_re='^(sk-replace-me|changeme|your-.*key.*|xxx+)$'
 if [ -n "${!key_env:-}" ]; then
   if [[ "${!key_env:-}" =~ $placeholder_re ]]; then
-    bad "$key_env is set but still the placeholder value"
+    record fail credential "$key_env is set but still the placeholder value"
   else
-    ok "$key_env set in the current environment"
+    record ok credential "$key_env set in the current environment"
   fi
 elif [ -s "$DSH_HOME/.env" ] && grep -qE "^${key_env}=..*" "$DSH_HOME/.env"; then
   value="$(grep -E "^${key_env}=" "$DSH_HOME/.env" | head -1 | cut -d= -f2-)"
   if [[ "$value" =~ $placeholder_re ]]; then
-    bad "$key_env in $DSH_HOME/.env is still the placeholder — put the real key in"
+    record fail credential "$key_env in $DSH_HOME/.env is still the placeholder — put the real key in"
   else
-    ok "$key_env present in $DSH_HOME/.env"
+    record ok credential "$key_env present in $DSH_HOME/.env"
   fi
 else
-  bad "$key_env missing — add it to $DSH_HOME/.env (see .env.example)"
+  record fail credential "$key_env missing — add it to $DSH_HOME/.env (see .env.example)"
 fi
 
 # --- live model call --------------------------------------------------------
@@ -76,7 +148,7 @@ if command -v curl >/dev/null 2>&1; then
   sess="$(grep -E '^\s+x-opencode-session:' "$DSH_HOME/settings.yaml" | head -1 | awk '{print $2}')"
 
   if [ -z "$key" ] || [[ "$key" =~ $placeholder_re ]]; then
-    meh "skipping the live call: no usable key"
+    record warn inference "skipping the live call: no usable key"
   else
     out="$(mktemp)"
     args=(-s -o "$out" -w '%{http_code}' -m 45 "$base/chat/completions"
@@ -86,31 +158,25 @@ if command -v curl >/dev/null 2>&1; then
       -d "{\"model\":\"$model\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}")"
     case "$code" in
       200)
-        if grep -q '"choices"' "$out"; then ok "inference on $model -> 200"
-        else meh "inference on $model -> 200 but an unexpected body"; fi ;;
-      400) bad "inference -> 400 ($(head -c 120 "$out"))" ;;
-      401|403) bad "inference -> $code (key rejected or out of quota)" ;;
-      000) meh "inference -> no response (offline?)" ;;
-      *) meh "inference -> $code" ;;
+        if grep -q '"choices"' "$out"; then record ok inference "inference on $model -> 200"
+        else record warn inference "inference on $model -> 200 but an unexpected body"; fi ;;
+      400) record fail inference "inference -> 400 ($(head -c 120 "$out"))" ;;
+      401|403) record fail inference "inference -> $code (key rejected or out of quota)" ;;
+      000) record warn inference "inference -> no response (offline?)" ;;
+      *) record warn inference "inference -> $code" ;;
     esac
     rm -f "$out"
   fi
 else
-  meh "curl not available; skipping the live call"
+  record warn inference "curl not available; skipping the live call"
 fi
 
 # --- skills -----------------------------------------------------------------
 if [ -d "$DSH_HOME/skills" ]; then
   n="$(find -L "$DSH_HOME/skills" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
-  ok "$n skill(s) in $DSH_HOME/skills"
+  record ok skills "$n skill(s) in $DSH_HOME/skills"
 else
-  meh "no $DSH_HOME/skills directory"
+  record warn skills "no $DSH_HOME/skills directory"
 fi
 
-echo
-if [ "$fail" -eq 0 ]; then
-  printf 'status: \033[32mREADY\033[0m (%d ok, %d warn)\n' "$pass" "$warn"
-else
-  printf 'status: \033[31mNOT READY\033[0m (%d ok, %d warn, %d fail)\n' "$pass" "$warn" "$fail"
-  exit 1
-fi
+finish
