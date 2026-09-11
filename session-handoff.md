@@ -4,7 +4,7 @@
 
 - Goal: finish the backlog — machine-readable readiness (`feat-005`) and a Node baseline check (`feat-008`) — then close the session.
 - Current status: complete. **The backlog is empty**: `feat-001` … `feat-008` are all `done`; repo clean and pushed.
-- Branch / commit: `main` @ this turn's feature commit, with the evidence commit on top.
+- Branch / commit: `main` @ `da7dd13` (feat-005 + feat-008), with the evidence commit on top.
 
 ## Completed This Session
 
