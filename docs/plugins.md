@@ -28,29 +28,49 @@ pinned exactly; `./init.sh` rejects `latest`, `*`, `^`, `~`, a missing field, or
 disable/enable that writes a `disabled:` row into the profile's `cordis.patch.yml` (HMR re-composes in
 ~1 s, no restart). *Diagnostics* shows the load order and conflicts; *Backup & restore* exports the
 plugin list as JSON. The market manages itself from **Settings → Plugins → Plugin configuration**.
-
-> **Market installs drift from `plugins.json`.** Anything installed through the market lands in the
-> profile only, so a second machine will not have it. Add the entry to `plugins.json` (after the
-> pre-flight) to make it reproducible — the applier is add-only and will not fight the market.
+Reproducibility caveat: see the market/`plugins.json` rule below.
 
 **`dsh-find-plugin` — ask the agent.** It registers the `find_dsh_plugin` tool: a live GitHub search
 over the public `dsh-plugin` topic, ranked by stars, enriched with the curated list's descriptions. It
 returns ready-to-run `dsh plugin add` lines. Prompt shape: *"find me a dsh plugin for X"* /
-*"có plugin dsh nào làm Y không?"*. Reference documentation (the curated index) is a plain HTTP fetch
-through `web_fetch`, which needs no key either.
+*"có plugin dsh nào làm Y không?"*. Host-only: it needs no profile client. (The reference catalogue is
+also reachable as a plain HTTP fetch — `web_fetch`/`read_page`, no key.)
 
-**`modsearch` — three agent tools, no key required.**
-`web_search` is the ordinary search tool; the layer above reroutes the `web` row's `searchProvider`
-to `modsearch`, so the credential-less DeepSeek engine is bypassed. `read_page` reads one specific
-URL, `x_search` searches X/Twitter. Keyless engines (local, `antigravity-cli`, `grok-cli`) work out
-of the box; adding `TAVILY_API_KEY` / `EXA_API_KEY` / `FIRECRAWL_API_KEY` unlocks the keyed engines.
-Config card: **Settings → Plugins → Plugin configuration → Search engine (ModSearch)**; route health
-via `curl -b <cookie> http://127.0.0.1:4319/modsearch/config` or `npx @liustack/modsearch doctor`.
+**`modsearch` — three agent tools; page fetch works keyless, web search needs one engine key here.**
+The layer above reroutes the `web` row's `searchProvider` to `modsearch`, so the built-in
+credential-less DeepSeek engine is bypassed. It registers `web_search` (the ordinary search tool),
+`read_page` (one specific URL) and `x_search` (X/Twitter).
 
-**`dsh-vision-toolkit` — Settings → *Vision*.** Pick the protocol (OpenAI Chat Completions or
-Anthropic Messages), base URL, model, API key. The default is the vendor's free service
-(`https://vision.anionex.me/v1`, `gemini-3.7-flash`; the key is the literal string
-`https://agent-vision.anionex.me`). Tools:
+The engine set is resolved per machine — check it before promising a search:
+
+```bash
+npx @liustack/modsearch doctor          # from the profile dir; no quota, no network
+```
+
+Measured on this machine (2026-09-11):
+
+| Source | Resolved | State |
+|---|---|---|
+| fetch (→ `read_page`) | `local` | **READY keyless** — verified: `example.com` → 200, content + links + uncertainty |
+| search (→ `web_search`) | `firecrawl` | keyless **refused from this IP** (`403`, "your IP address looks suspicious"); needs a key |
+| social (→ `x_search`) | none | needs the `grok` CLI signed in |
+
+So a working search needs **one** of: a free Firecrawl key (`modsearch config set firecrawl.apiKey <k>`,
+1 000 credits/month), `TAVILY_API_KEY`, `EXA_API_KEY`, or the Antigravity CLI
+(`curl -fsSL https://antigravity.google/cli/install.sh \| bash && agy`). The same keys can be set in
+**Settings → Plugins → Plugin configuration → Search engine (ModSearch)**, which POSTs to
+`/modsearch/config`; route health reads back from the same URL with the session cookie. `fetch` keeps
+working with nothing set.
+
+**`dsh-vision-toolkit` — Settings → *Vision*, and it works with zero configuration.** Pick the
+protocol (OpenAI Chat Completions or Anthropic Messages), base URL, model, API key. The default is the
+vendor's free service — `https://vision.anionex.me/v1`, model `gemini-3.7-flash`, and the API key is
+the literal string `https://agent-vision.anionex.me` (`lib/defaults.js`:
+`BUILT_IN_FREE_VISION_BASE_URL` / `BUILT_IN_FREE_VISION_KEY`). Verified against that endpoint:
+`GET /v1/models` → 200, and a real image call returned a correct description in ~7 s. The endpoint is
+vision-only (`400` *"At least one user image_url is required"* for a text-only turn) and sits behind
+Cloudflare, which serves `403` to non-browser user agents — the packaged client sends a browser UA by
+default, so this only matters if you call it by hand. Tools:
 
 | Local (never uploads the image) | Remote (sends the image bytes to the configured API) |
 |---|---|
@@ -62,6 +82,21 @@ session workspace, the platform temp dir, or an `allowedDirs` entry; outputs sta
 plugin-managed output directory. The managed runtime is a Python venv at
 `$DSH_HOME/cache/dsh-vision-toolkit/python/<hash>` (pillow, numpy, vtracer); if it is absent the first
 use prepares it (up to 10 minutes, needs network + `uv`).
+
+> **Tools appear per agent session.** A session that was already open before the restart runs the old
+> plugin set: `read_page`, `find_dsh_plugin` and the `vision_*` tools are simply not in it. Open a new
+> session (or reload the page) after a plugin change.
+
+> **All five live on the `web` profile only.** `plugins.json` declares nothing for `headless`, `sdk`,
+> `sdk-minimal` or `acp`, so a session booted from those profiles gets the dead built-in `web_search`
+> and none of these tools.
+
+> **The market is for browsing; `plugins.json` is the source of truth.** Anything installed through
+> the Plugin Market UI writes to the machine-local profile (`~/.dsh/profiles/web`) and nowhere else, so
+> it is absent on a second machine and `./init.sh` will not notice — it validates the manifest, not
+> installed state. Any keeper therefore goes through the documented path: `./scripts/plugin-preflight.sh
+> <spec>`, add the entry to `plugins.json`, `./scripts/install-plugins.sh`, commit. The applier is
+> add-only and will not fight or uninstall what the market added.
 
 > **Why these four were added (2026-09-11).** Three gaps in ordinary use: no in-harness way to
 > discover a plugin, a built-in `web_search` that fails with *"no API key for `DEEPSEEK_API_KEY`"*, and

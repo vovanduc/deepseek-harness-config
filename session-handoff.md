@@ -63,10 +63,15 @@
 
 ## Blockers / Risks
 
-- `modsearch` runs on keyless CLI/local engines (verified with a real search); keyed engines need
-  `TAVILY_API_KEY` / `EXA_API_KEY` / `FIRECRAWL_API_KEY`. `dsh-vision-toolkit` runs on the vendor's
-  free default service (verified end-to-end through the bundled CLI + managed venv).
-- Market installs land in the profile only — add the pin to `plugins.json` to make one reproducible.
+- **`web_search` is not usable here yet.** `modsearch` resolved `firecrawl` for search and it answers
+  `403` for this IP keyless; one of `TAVILY_API_KEY` / `EXA_API_KEY` / `firecrawl.apiKey` (or the `agy`
+  CLI) unlocks it. `read_page` works as-is; `x_search` needs the `grok` CLI.
+- `dsh-vision-toolkit` needs nothing — its free default service authenticated and described a real
+  image in ~7 s.
+- Market installs land in the profile only — add the pin to `plugins.json` to make one reproducible;
+  `./init.sh` validates the manifest, never installed state.
+- A session opened before the restart carries none of the new tools (per-session composition), and
+  nothing here is on the `headless` / `sdk` / `acp` profiles.
 - Two of the five entries declare no `dsh.compatibility` map at all — a pre-flight pass is a filter,
   and the restart is what actually settled them (all four client halves load).
 - The `@deepseek-ai/dsh-client-runtime` family block (`plugin-fit-vs-popularity`) will need revisiting
@@ -84,8 +89,10 @@
 
 ## Recommended Next Step
 
-- **Exercise the agent-side tools from an ordinary session.** `find_dsh_plugin`, `read_page`,
-  `x_search` and the `vision_*` set are registered and the vision runtime is ready; usage for each is
-  written up in `docs/plugins.md` → *How to use them*. Deeper plugin decisions (Memory vs this repo's
-  OKF, Skills/Workflow vs `dcnet-workflow`, Security, Runtime) are listed in `progress.md` → What's
-  Next, with the ranked catalog at `/tmp/adp/report.md` until it is moved into `knowledge/`.
+- **Give modsearch a search engine, then exercise the agent-side tools in a fresh session.**
+  `npx @liustack/modsearch doctor` explains the choice; set a key in **Settings → Plugins → Plugin
+  configuration → Search engine (ModSearch)**. Then, from a *new* session, run one `web_search`, one
+  `read_page` (works already) and one `vision_glance` on a screenshot. Usage for each is written up in
+  `docs/plugins.md` → *How to use them*. Deeper plugin decisions (Memory vs this repo's OKF,
+  Skills/Workflow vs `dcnet-workflow`, Security, Runtime) are listed in `progress.md` → What's Next,
+  with the ranked catalog at `/tmp/adp/report.md` until it is moved into `knowledge/`.
