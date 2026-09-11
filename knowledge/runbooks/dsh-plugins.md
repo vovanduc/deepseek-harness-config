@@ -86,8 +86,31 @@ ever adds — it never uninstalls.
 
 # The set here
 
-`plugins.json` declares `dsh-mermaid@0.4.0` for the `web` profile. `dsh-diagram` is deliberately
-absent for the reason above.
+`plugins.json` declares five plugins for the `web` profile — `dsh-mermaid@0.4.0` (diagrams),
+`dshmarket@1.45.1` (the market inside Settings), `dsh-find-plugin@0.3.7` (host-only registry search),
+`@liustack/modsearch@5.10.2` (web search + fetch, because the built-in `web_search` has no key on this
+route) and `@anionex/dsh-vision-toolkit@0.1.44` (vision for the text-only routes).
+`dsh-diagram` is deliberately absent for the reason above.
+
+# Finding candidates
+
+[`awesome-dsh-plugin/awesome-dsh-plugin`](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) is
+a curated **index**, not a manager — it never installs anything. Useful inputs: the 23 category
+sections, and `data/stars.json` / `data/downloads.json` for ranking (coverage 1 488 / 624 entries,
+snapshot-dated). The managing half is `dshmarket` itself, or `dsh plugin --profile <p> add <spec>`.
+
+Two filters before trusting an entry, in this order:
+
+```bash
+npm view <spec> repository.url dsh --json      # the npm name must be the repo you read
+./scripts/plugin-preflight.sh <name>@<x.y.z>   # and it must run on the pinned release
+```
+
+The 2026-09-11 survey found the *most popular* entries in two categories
+(`dsh-vision-router@2.1.5` ⭐775, `dsh-free-search@0.4.24` ⬇2 141) blocked by the second filter —
+both inject `@deepseek-ai/dsh-client-runtime`, absent from `0.1.5-rc.1`. Full list:
+[../gotchas/plugin-fit-vs-popularity.md](../gotchas/plugin-fit-vs-popularity.md).
+
 
 
 # Related

@@ -4,6 +4,26 @@
       "profile": "web",
       "package": "dsh-mermaid@0.4.0",
       "source": "https://github.com/MrmoLabs/dsh-mermaid"
+    },
+    {
+      "profile": "web",
+      "package": "dshmarket@1.45.1",
+      "source": "https://github.com/dsh-market/dsh-market"
+    },
+    {
+      "profile": "web",
+      "package": "dsh-find-plugin@0.3.7",
+      "source": "https://github.com/awesome-dsh-plugin/dsh-find-plugin"
+    },
+    {
+      "profile": "web",
+      "package": "@liustack/modsearch@5.10.2",
+      "source": "https://github.com/liustack/modsearch"
+    },
+    {
+      "profile": "web",
+      "package": "@anionex/dsh-vision-toolkit@0.1.44",
+      "source": "https://github.com/Anionex/dsh-vision-toolkit"
     }
   ]
 }

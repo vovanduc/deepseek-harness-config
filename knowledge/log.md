@@ -39,3 +39,6 @@ title: Knowledge change log
 2026-09-11 — runbook/verify-change — updated: `doctor.sh --json` (one object, stable keys, identical verdict and exit code).
 2026-09-11 — script/doctor — added: `--json` emits `{status, ok, warn, fail, checks[]}`; `compose` is absent when `dsh` is not on PATH.
 2026-09-11 — script/check-node — added: Node 20 floor from `.nvmrc`, warn on a divergent major; `install.sh` runs it before creating anything.
+2026-09-11 — plugin-set/expansion — updated: `plugins.json` now declares 5 web plugins (+ `dshmarket@1.45.1`, `dsh-find-plugin@0.3.7`, `@liustack/modsearch@5.10.2`, `@anionex/dsh-vision-toolkit@0.1.44`), each pre-flighted against 0.1.5-rc.1; installed and composed, not yet live (needs a `dsh web` restart).
+2026-09-11 — gotcha/plugin-fit-vs-popularity — added: the list's ⭐/⬇ leaders in two categories are refused on 0.1.5-rc.1 (`@deepseek-ai/dsh-client-runtime` is gone), and `liustack/modsearch` publishes scoped — popularity ≠ fitness, and a list link is not an npm name.
+2026-09-11 — discovery/channel — referenced: `awesome-dsh-plugin/awesome-dsh-plugin` is a curated index (3.4k entries / 23 categories, `data/stars.json` + `data/downloads.json`, snapshot 2026-08-19), not a manager; `dshmarket` is the managing half.
