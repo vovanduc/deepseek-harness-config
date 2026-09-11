@@ -5,7 +5,7 @@
 - Goal: survey the curated dsh plugin index (`awesome-dsh-plugin/awesome-dsh-plugin`) category by
   category, decide what is worth using, and land the first bundle as a reproducible feature.
 - Current status: complete. `feat-009` is `done`; **the backlog is empty**; repo clean and pushed.
-- Branch / commit: `main` — see the CI row below for the closed-out commit.
+- Branch / commit: `main` @ `8695a33` (`feat-009`), with the evidence commit on top.
 
 ## Completed This Session
 
@@ -34,7 +34,7 @@
 | Host layers | `dsh --profile web --dump-default-config \| grep '# =='` | 5 plugin layers | host layer only, not proof the client half lives |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Knowledge links | link check over `knowledge/**` + docs + README | 129 checked, 0 broken | 57 files |
-| CI | GitHub Actions run on the closing commit | pending in this file | recorded in the follow-up commit |
+| CI | [run 34568962541](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34568962541) on `8695a33` | success | the same `./init.sh` gate the repo runs locally |
 
 ## Files Changed
 

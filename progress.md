@@ -125,7 +125,7 @@
 - [x] Harness audit: `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .`
   → `Overall: 100/100`, bottleneck none.
 - [x] Knowledge links: 129 checked across 57 markdown files, 0 broken.
-- [x] GitHub Actions green on the new commit (recorded in `session-handoff.md`).
+- [x] GitHub Actions green on the new commit: [34568962541](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34568962541) (`8695a33`, `feat-009`).
 - [ ] **Not verified:** that the four new client halves activate — that needs a `dsh web` restart,
   which this session deliberately did not perform (the user is talking to the agent through that
   server). `--dump-config` proves the host layer only.
