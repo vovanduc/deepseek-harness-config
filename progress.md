@@ -88,7 +88,7 @@
 - [x] `./scripts/doctor.sh` → `status: READY (6 ok, 0 warn)`, inference on `deepseek-flash` → 200.
 - [x] `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` → `Overall: 100/100`, bottleneck none.
 - [x] Knowledge links: 0 broken.
-- [x] GitHub Actions green on `main` through `e548d0e`; this session's runs recorded in `session-handoff.md`.
+- [x] GitHub Actions runs green on `main`: [34560695575](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34560695575) (`9a89eb9`, the dsh-diagram removal) and [34561029949](https://github.com/vovanduc/deepseek-harness-config/actions/runs/34561029949) (`295a655`, feat-007).
 
 ## Notes for Next Session
 

@@ -4,7 +4,7 @@
 
 - Goal: make the dsh plugin set reproducible from git, then stop an incompatible plugin from ever reaching a profile.
 - Current status: complete — `feat-001` … `feat-004`, `feat-006` and `feat-007` are `done`; repo clean and pushed.
-- Branch / commit: `main` @ this turn's commit (hash recorded in `progress.md`).
+- Branch / commit: `main` @ `295a655` (feat-007), with the evidence commit on top.
 
 ## Completed This Session
 
