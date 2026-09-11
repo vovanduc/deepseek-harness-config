@@ -29,5 +29,8 @@ title: Knowledge change log
 2026-09-10 — runbook/ci-verification — updated: action majors bumped to v7 (Node 24 runner runtime, clears the Node 20 deprecation annotation).
 2026-09-10 — runbook/update-ponytail-skills — added: pinned upstream ref, drift check vs apply, and what is deliberately not synced (built `.openclaw` copy, plugin hooks).
 2026-09-11 — gotcha/web-ui-exits-under-a-tty — added: `dsh web` exits 0 without serving when stdout is a TTY; supervise it non-interactively.
+2026-09-11 — gotcha/dsh-diagram-incompatible-with-pinned-dsh — added: its client needs a `conversationEvents` service absent from dsh 0.1.5-rc.1, so the layer composes but the web boot dies.
+2026-09-11 — runbook/dsh-plugins — updated: added the shell-side check that proves the *running* server serves a plugin (`?token=` → cookie, registry inline in `/`, `client.js` 200), because `--dump-config` only proves the host layer.
+2026-09-11 — runbook/dsh-plugins — updated: the boot-killing failure mode (a client half built for another release) and the set actually declared here. `dsh-diagram` dropped from `plugins.json`.
 2026-09-11 — runbook/dsh-plugins — added: `plugins.json` as the source of truth, apply/verify/restart, and the `prepare`/`allowBuilds` failure mode.
 2026-09-11 — gotcha/dsh-mermaid-npm-name-collision — added: the npm name is held by MrmoLabs, not the AKS1st repo a plugin list links.

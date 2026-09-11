@@ -12,10 +12,18 @@ pinned versions.
 | Profile | Package | What it does | Source |
 |---|---|---|---|
 | `web` | `dsh-mermaid@0.4.0` | renders ` ```mermaid ` fences as theme-aware SVG diagrams in chat | [MrmoLabs/dsh-mermaid](https://github.com/MrmoLabs/dsh-mermaid) |
-| `web` | `dsh-diagram@0.4.0` | draws editable Excalidraw canvases with a live preview card in the conversation | [hanzhangzzz/dsh-diagram](https://github.com/hanzhangzzz/dsh-diagram) |
 
-Both are MIT and publish a `dsh.bundle` patch. Versions are pinned exactly; `./init.sh` rejects
-`latest`, `*`, `^`, `~`, a missing field, or a duplicate entry.
+The plugin is MIT and publishes a `dsh.bundle` patch. Versions are pinned exactly; `./init.sh`
+rejects `latest`, `*`, `^`, `~`, a missing field, or a duplicate entry.
+
+> **`dsh-diagram` is deliberately not in the set.** Its client bundle injects a `conversationEvents`
+> service that does not exist in the pinned dsh (`0.1.5-rc.1`; its own compatibility list stops at
+> `0.1.1-rc.2`), so the layer composes but its client entry never activates and the web UI dies at
+> boot with `Failed to load plugins`. Verified 2026-09-11: `dsh-diagram@0.4.0` installed → boot
+> failed; removed → boot clean and `dsh-mermaid` rendered. Re-add it only when a release lists dsh
+> 0.1.5 in `dsh.compatibility.dshReleases`. See
+> `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`.
+
 
 > **Name collision.** `AKS1st/dsh-mermaid` (v0.5.0) also calls its package `dsh-mermaid`, but the npm
 > name belongs to `MrmoLabs`. `dsh plugin add dsh-mermaid` therefore installs MrmoLabs's v0.4.0. The
@@ -44,12 +52,25 @@ Both are MIT and publish a `dsh.bundle` patch. Versions are pinned exactly; `./i
 A running profile keeps the bundle set it started with. After adding, removing, or updating a plugin,
 **restart that profile** (`dsh web`). Restart it non-interactively: `dsh web` exits immediately when
 stdout is a TTY (see `knowledge/gotchas/web-ui-exits-under-a-tty.md`). Ordinary `cordis.patch.yml`
-edits hot-reload instead — only bundle membership needs the restart. Verify a layer without booting
-anything:
+edits hot-reload instead — only bundle membership needs the restart.
+
+## Verify the restart actually took
+
+`dsh --profile web --dump-default-config` only proves the **host** layer composes. It happily printed
+`# == dsh-diagram` for a plugin whose client half then killed the boot. To prove the server is
+serving a plugin:
 
 ```bash
-dsh --profile web --dump-default-config | grep -A2 '# == dsh-mermaid'
+# token = the one-time URL from the startup log; an existing cookie works too
+curl -s -c /tmp/j -o /dev/null "http://127.0.0.1:4319/?token=$TOKEN"
+curl -s -b /tmp/j http://127.0.0.1:4319/ | grep -o '{"id":"dsh-[^"]*"'      # served roster
+curl -s -b /tmp/j -o /dev/null -w '%{http_code}\n' \
+  "http://127.0.0.1:4319/plugins/??dsh-mermaid/client.js&rev=<rev>"          # 200 = client served
 ```
+
+The served page carries the plugin registry inline (each entry has `url` and `inject`), so a plugin
+missing from that list, or a `client.js` that 404s, is caught without a browser. Full proof of a
+plugin that renders is still the browser.
 
 ## Removing
 

@@ -28,7 +28,22 @@ dsh --profile web --dump-default-config | grep -A2 '# == dsh-mermaid'
 ```
 
 `--dump-config` / `--dump-default-config` compose and print the tree without starting the app, which
-is the only safe way to check a plugin on a machine whose profile is already running.
+is the only safe way to check a plugin on a machine whose profile is already running. It proves the
+**host** layer only — see the failure mode below.
+
+# Verify the running server actually serves it
+
+```bash
+TOKEN=<one-time token from the startup log>   # an existing browser cookie works too
+curl -s -c /tmp/j -o /dev/null "http://127.0.0.1:4319/?token=$TOKEN"
+curl -s -b /tmp/j http://127.0.0.1:4319/ | grep -o '{"id":"dsh-[^"]*"'   # roster the client loads
+curl -s -b /tmp/j -o /dev/null -w '%{http_code}\n' \
+  "http://127.0.0.1:4319/plugins/??dsh-mermaid/client.js&rev=<rev>"       # 200
+```
+
+Every plugin's registry entry (`url`, `inject`) is inline in the served page, so a plugin that never
+made it into the running bundle set — or a `client.js` that 404s — is visible from the shell. A
+plugin's lazy assets sit under its own root too (e.g. `/dsh-mermaid/mermaid-runtime.js`, 3.4 MB).
 
 # Restart
 
@@ -46,6 +61,17 @@ ever adds — it never uninstalls.
   blocks until `allowBuilds` is added to the profile's machine-local `pnpm-workspace.yaml`. Prefer a
   published npm tarball, which needs no allowance.
 - A package without `dsh.bundle` installs as a plain dependency and activates no layer (dsh warns).
+- **A client half built for another dsh release kills the whole web boot.** `dsh-diagram@0.4.0`
+  injects a `conversationEvents` client service that dsh `0.1.5-rc.1` does not provide: the layer
+  composes (`--dump-default-config` is happy), then the browser shows `Failed to load plugins` and
+  renders nothing. Only the browser catches it — so after any plugin change, check the UI, not just
+  the config dump. Details and the compatibility check: [../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md](../gotchas/dsh-diagram-incompatible-with-pinned-dsh.md).
+
+# The set here
+
+`plugins.json` declares `dsh-mermaid@0.4.0` for the `web` profile. `dsh-diagram` is deliberately
+absent for the reason above.
+
 
 # Related
 

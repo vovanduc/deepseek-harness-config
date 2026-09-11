@@ -2,8 +2,8 @@
 
 ## Current Objective
 
-- Goal: make the dsh **plugin set** reproducible from git, and seed it with `dsh-mermaid` + `dsh-diagram`.
-- Current status: complete — `feat-001` … `feat-004` and `feat-006` are `done`; repo clean and pushed.
+- Goal: make the dsh **plugin set** reproducible from git, seeded with `dsh-mermaid` (and, until the first UI restart proved otherwise, `dsh-diagram`).
+- Current status: complete — `feat-001` … `feat-004` and `feat-006` are `done`; the plugin set was amended after its first restart; repo clean and pushed.
 - Branch / commit: `main` @ `afd7cea` (feat-006), with the evidence commit on top.
 
 ## Completed This Session
@@ -12,27 +12,34 @@
 - [x] `scripts/install-plugins.sh` — compares each profile's `dependencies` and applies the difference via `dsh plugin … add`; `--dry-run` plans only.
 - [x] `install.sh` calls the applier after the skills step (a failure warns, it does not abort).
 - [x] `init.sh` guards the manifest (exact pins, no duplicates, required fields) and the `install.sh` wiring.
-- [x] Installed `dsh-mermaid@0.4.0` and `dsh-diagram@0.4.0` into the `web` profile; verified the layers with `--dump-default-config`.
-- [x] `docs/plugins.md` + `knowledge/runbooks/dsh-plugins.md` + `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`.
+- [x] Installed `dsh-mermaid@0.4.0` into the `web` profile; verified the layer with `--dump-default-config`.
+- [x] Restarted the `web` profile non-interactively and checked the browser: `dsh-mermaid` renders (SVG, Diagram/Code toggle, fullscreen, Download SVG).
+- [x] `dsh-diagram@0.4.0` removed after that restart — its client half needs a `conversationEvents` service the pinned dsh does not have, and it killed the whole web boot. Entry dropped from `plugins.json`, trap recorded.
+- [x] `docs/plugins.md` + `knowledge/runbooks/dsh-plugins.md` + `knowledge/gotchas/dsh-mermaid-npm-name-collision.md` + `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`.
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| Offline gate | `./init.sh` | exit 0 | 5 scripts, 6 features, 2 plugins pinned, CI wiring, shellcheck |
+| Offline gate | `./init.sh` | exit 0 | 5 scripts, 6 features, 1 plugin pinned, CI wiring, shellcheck |
 | Manifest guards | mutate `plugins.json` / `install.sh`, run `./init.sh` | exit 1 (×5) | `@latest`, `^range`, duplicate, missing field, dropped call |
-| Plugin install | `./scripts/install-plugins.sh` | exit 0, `2 added` | profile `dependencies` + `dsh.profile.bundles` updated |
-| Plugin layers | `dsh --profile web --dump-default-config` | layers at lines 540 / 543 | `# == dsh-mermaid`, `# == dsh-diagram` — no boot needed |
-| Idempotency | `./scripts/install-plugins.sh` (re-run) | `0 added, 2 already installed` | pins exact, so a bump re-applies |
+| Plugin install | `./scripts/install-plugins.sh` | exit 0, `2 added` | both plugins went in; `dsh-diagram` was removed again after the restart below |
+| Plugin layers | `dsh --profile web --dump-default-config` | `# == dsh-mermaid` | the dump proved the layer, not that it loads |
+| Idempotency | `./scripts/install-plugins.sh` (re-run) | `0 added, 1 already installed` | pins exact, so a bump re-applies |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Machine check | `./scripts/doctor.sh` | `status: READY (6 ok, 0 warn)` | live inference `deepseek-flash -> 200` |
 | Knowledge links | link check over `knowledge/**` + docs | 0 broken | |
 
-**Not verified here:** the rendered diagrams. Bundle membership only takes effect when the `web`
-profile restarts, and restarting it would end the session that installed the plugins. Restart
-non-interactively — under a TTY `dsh web` exits 0 without serving
-(`knowledge/gotchas/web-ui-exits-under-a-tty.md`) — then check that a ```mermaid fence renders in a
-session and that the `/` menu lists `canvas-diagram`.
+**Now verified** (2026-09-11, after the restart this handoff asked for):
+
+- `dsh-mermaid`: a ```mermaid fence rendered in the browser — SVG with 3 nodes (Tải đơn → Duyệt →
+  Gửi hàng) and 7 labels, Code/Diagram toggle round-trips, Fullscreen (zoom 285% / Fit / Close),
+  Download SVG → `mermaid-flowchart.svg` (13,379 B).
+- `dsh-diagram`: **cannot run**. Its layer composed, but the client entry never activated
+  (`dsh-diagram: pending (waiting for service: conversationEvents)`) and the UI died with
+  `Failed to load plugins`. `conversationEvents` does not exist in dsh 0.1.5-rc.1. Removed from the
+  profile and from `plugins.json`; there is no `/`-menu `canvas-diagram` entry.
+- The restart did **not** end the session (it ran in an `omp` session, not inside `dsh web`).
 
 ## Files Changed
 

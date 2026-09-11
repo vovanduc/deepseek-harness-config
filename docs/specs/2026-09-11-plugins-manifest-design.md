@@ -101,6 +101,24 @@ otherwise run `add` (which also covers a version bump).
 - `./init.sh`, the harness audit, the knowledge link check, and the CI run after pushing.
 - Not verifiable here: the rendered diagrams — that needs a web-profile restart, which would end this session.
 
+## Outcome (2026-09-11, after the first web-profile restart)
+
+The restart happened in a later session (an `omp` session — restarting `dsh web` does **not** end it,
+contrary to the non-goal above). Two results:
+
+1. `dsh-mermaid@0.4.0` works: a ```mermaid fence rendered as an SVG (3 nodes, 7 labels) with the
+   Diagram/Code toggle, the fullscreen viewer and Download SVG. Acceptance criterion 1 holds for it.
+2. **`dsh-diagram@0.4.0` cannot run on this dsh.** Its layer composes, but its client bundle injects a
+   `conversationEvents` service that dsh `0.1.5-rc.1` does not provide, so the entry never activates
+   and the web boot dies with `Failed to load plugins` — the UI renders nothing. Its own
+   `dsh.compatibility.dshReleases` stops at `0.1.1-rc.2`.
+
+Therefore acceptance criterion 1 is **amended**: the set is `dsh-mermaid@0.4.0` only.
+`dsh-diagram` was removed (`dsh plugin --profile web remove dsh-diagram`) and its `plugins.json`
+entry deleted; re-adding it requires a release that lists dsh 0.1.5 as compatible. The trap is
+recorded in `knowledge/gotchas/dsh-diagram-incompatible-with-pinned-dsh.md`, and the lesson — a
+config dump is not proof, only the browser is — in `knowledge/runbooks/dsh-plugins.md`.
+
 ## Process note
 
 `superpowers:*` is not installed in this session, so the spec and plan are written by hand and the

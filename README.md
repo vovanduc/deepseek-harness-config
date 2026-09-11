@@ -71,7 +71,7 @@ the old cookie keeps working.
 | Default model | `deepseek-flash` (DeepSeek V4.1 Flash, 1M ctx) | `settings.yaml` → `agent-default-model` |
 | Session preset | `standard` | `settings.yaml` → `agent-presets.default` |
 | Permissions | `workspace-write` (sandboxed writes + approval prompts) | `settings.yaml` → `permission.defaultPreset` |
-| Plugins | `dsh-mermaid@0.4.0` + `dsh-diagram@0.4.0` on the `web` profile | `plugins.json` |
+| Plugins | `dsh-mermaid@0.4.0` on the `web` profile | `plugins.json` |
 
 Adding another provider or model is a `settings.yaml` edit — see [docs/models.md](docs/models.md).
 The four session modes and the permission presets are in [docs/modes.md](docs/modes.md). The plugin
