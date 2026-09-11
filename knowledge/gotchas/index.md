@@ -9,3 +9,4 @@ title: Gotchas — non-obvious traps
 - [Two compat flags for "valid key, every request fails"](compat-flags.md) — developer role, `max_tokens`.
 - [An empty YAML value is refused, not ignored](empty-yaml-value-refused.md) — dsh will not start.
 - [Hand-declared models are text-only](hand-declared-models-text-only.md) — add `input: [text, image]`.
+- [`dsh web` exits 0 under a TTY](web-ui-exits-under-a-tty.md) — pipe stdout, or run it non-interactively.
