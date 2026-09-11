@@ -14,10 +14,12 @@ settings.yaml        providers + default model + session defaults   (symlinked t
 .env.example         credential template                            (copied to ~/.dsh/.env once)
 dsh.version          the dsh build this config is verified against
 .nvmrc               Node major pinned for CI (22)
+plugins.json         plugins installed per dsh profile, version-pinned
 skills/              SKILL.md bundles linked into ~/.dsh/skills
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
 scripts/update-ponytail.sh  sync skills/ from the pinned upstream ponytail release
-docs/                models, modes, troubleshooting + specs/plans for a feature
+scripts/install-plugins.sh  apply plugins.json to the local dsh profiles
+docs/                models, modes, plugins, troubleshooting + specs/plans for a feature
 AGENTS.md            agent routing: startup workflow, working rules, Definition of Done
 init.sh              offline verification gate — run first, every session
 feature_list.json    feature state + evidence        progress.md      cross-session context
@@ -41,8 +43,8 @@ $EDITOR ~/.dsh/.env          # put the real key in
 ```
 
 `install.sh` installs the pinned `dsh` globally, symlinks `settings.yaml` into `~/.dsh/`, seeds
-`~/.dsh/.env` (mode 600) if absent, links the skills, then runs the doctor. It is idempotent and
-moves anything it would overwrite to `*.bak-<timestamp>`.
+`~/.dsh/.env` (mode 600) if absent, links the skills, applies the plugin set from `plugins.json`,
+then runs the doctor. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`.
 
 Because `settings.yaml` is a **symlink**, the file the running server reads is this repo's file:
 changes made in the web UI's Settings pages land here and are ready to `git commit`. The same holds
@@ -69,9 +71,11 @@ the old cookie keeps working.
 | Default model | `deepseek-flash` (DeepSeek V4.1 Flash, 1M ctx) | `settings.yaml` → `agent-default-model` |
 | Session preset | `standard` | `settings.yaml` → `agent-presets.default` |
 | Permissions | `workspace-write` (sandboxed writes + approval prompts) | `settings.yaml` → `permission.defaultPreset` |
+| Plugins | `dsh-mermaid@0.4.0` + `dsh-diagram@0.4.0` on the `web` profile | `plugins.json` |
 
 Adding another provider or model is a `settings.yaml` edit — see [docs/models.md](docs/models.md).
-The four session modes and the permission presets are in [docs/modes.md](docs/modes.md).
+The four session modes and the permission presets are in [docs/modes.md](docs/modes.md). The plugin
+set, its provenance, and the restart rule are in [docs/plugins.md](docs/plugins.md).
 
 ## Security notes
 

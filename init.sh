@@ -83,6 +83,36 @@ for (const d of dirs) {
 console.log(`  ok ${dirs.length} skill bundle(s)`);
 JS
 
+step 'test: plugins.json is a pinned, de-duplicated plugin set'
+node - <<'JS'
+const { readFileSync } = require('node:fs');
+try {
+  const { plugins } = JSON.parse(readFileSync('plugins.json', 'utf8'));
+  if (!Array.isArray(plugins) || plugins.length === 0) throw new Error('plugins[] missing');
+  const seen = new Set();
+  for (const p of plugins) {
+    for (const key of ['profile', 'package']) {
+      if (typeof p[key] !== 'string' || !p[key].trim()) throw new Error(`each plugin needs a non-empty ${key}`);
+    }
+    const at = p.package.lastIndexOf('@');
+    const version = p.package.slice(at + 1);
+    if (at <= 0 || !version || version === 'latest' || version === '*' || /^[~^]/.test(version)) {
+      throw new Error(`${p.package}: pin an exact version (name@x.y.z), never a range or latest`);
+    }
+    const key = `${p.profile}/${p.package.slice(0, at)}`;
+    if (seen.has(key)) throw new Error(`duplicate plugin entry: ${key}`);
+    seen.add(key);
+  }
+  console.log(`  ok ${plugins.length} plugin(s) pinned for ${[...new Set(plugins.map((p) => p.profile))].join(', ')}`);
+} catch (err) {
+  console.error(`  FAIL ${err.message}`);
+  process.exit(1);
+}
+JS
+
+step 'test: install.sh still applies the plugin manifest'
+grep -qF '"$REPO/scripts/install-plugins.sh"' install.sh || fail 'install.sh no longer calls scripts/install-plugins.sh'
+
 step 'test: the CI workflow still runs this gate'
 CI_WORKFLOW='.github/workflows/verify.yml'
 [ -f "$CI_WORKFLOW" ] || fail "$CI_WORKFLOW is missing — CI must run the gate"

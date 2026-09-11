@@ -2,60 +2,60 @@
 
 ## Current Objective
 
-- Goal: adopt the full DCNET workflow (harness state + OKF knowledge layer), put the gate in CI, and make the ponytail skill sync repeatable.
-- Current status: complete — `feat-001` … `feat-004` are `done`; repo clean and pushed.
-- Branch / commit: `main` @ `5db3486` (feat-004), with the evidence commit on top.
+- Goal: make the dsh **plugin set** reproducible from git, and seed it with `dsh-mermaid` + `dsh-diagram`.
+- Current status: complete — `feat-001` … `feat-004` and `feat-006` are `done`; repo clean and pushed.
+- Branch / commit: `main` @ the `feat-006` commit, with the evidence commit on top.
 
 ## Completed This Session
 
-- [x] Harness state files: `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`.
-- [x] `AGENTS.md` routing pointer (startup workflow, working rules, DoD, end-of-session, escalation).
-- [x] `docs/specs/` and `docs/plans/` with READMEs so the layout survives the clone.
-- [x] OKF `knowledge/` bundle: `index.md`, `log.md`, six category indexes, 20 concepts.
-- [x] `feat-003`: `.github/workflows/verify.yml` + `.nvmrc`, README badge, and a guard in `init.sh` that fails if the CI wiring is removed.
-- [x] `feat-004`: `scripts/update-ponytail.sh` — drift check and `--apply` against the pinned upstream ref; `skills/README.md` updated.
+- [x] `plugins.json` — the plugin set, version-pinned, with `source` provenance.
+- [x] `scripts/install-plugins.sh` — compares each profile's `dependencies` and applies the difference via `dsh plugin … add`; `--dry-run` plans only.
+- [x] `install.sh` calls the applier after the skills step (a failure warns, it does not abort).
+- [x] `init.sh` guards the manifest (exact pins, no duplicates, required fields) and the `install.sh` wiring.
+- [x] Installed `dsh-mermaid@0.4.0` and `dsh-diagram@0.4.0` into the `web` profile; verified the layers with `--dump-default-config`.
+- [x] `docs/plugins.md` + `knowledge/runbooks/dsh-plugins.md` + `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`.
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| Offline gate | `./init.sh` | exit 0 | bash -n (4 scripts), JSON, YAML + default model, skills, CI wiring, shellcheck |
-| CI-wiring negative tests | mutate `verify.yml`, run `./init.sh` | exit 1 (×3) | no `./init.sh` step / no PyYAML step / `secrets.` reference |
-| Ponytail sync @ pin | `./scripts/update-ponytail.sh` | exit 0 | six skills + LICENSE byte-identical to `v4.9.0` |
-| Ponytail drift | `./scripts/update-ponytail.sh --ref v4.8.4` | exit 1 | `ponytail` 2 lines, `ponytail-help` 6 lines |
-| Ponytail apply | `--apply --ref v4.8.4`, then `git checkout -- skills` | restored | rewrote exactly the two drifting files |
-| CI (GitHub) | `gh run watch` on `a5d29af`, `c5a1b9d`, `5db3486` | success | 9s / 12s / 9s, no annotations |
+| Offline gate | `./init.sh` | exit 0 | 5 scripts, 6 features, 2 plugins pinned, CI wiring, shellcheck |
+| Manifest guards | mutate `plugins.json` / `install.sh`, run `./init.sh` | exit 1 (×5) | `@latest`, `^range`, duplicate, missing field, dropped call |
+| Plugin install | `./scripts/install-plugins.sh` | exit 0, `2 added` | profile `dependencies` + `dsh.profile.bundles` updated |
+| Plugin layers | `dsh --profile web --dump-default-config` | layers at lines 540 / 543 | `# == dsh-mermaid`, `# == dsh-diagram` — no boot needed |
+| Idempotency | `./scripts/install-plugins.sh` (re-run) | `0 added, 2 already installed` | pins exact, so a bump re-applies |
 | Harness audit | `node ~/.agents/skills/harness-creator/scripts/validate-harness.mjs --target .` | 100/100 | bottleneck: none |
 | Machine check | `./scripts/doctor.sh` | `status: READY (6 ok, 0 warn)` | live inference `deepseek-flash -> 200` |
+| Knowledge links | link check over `knowledge/**` + docs | 0 broken | |
 
-`./init.sh` is the portable gate (no credential needed) and runs in CI; `doctor.sh` proves a
-particular machine can reach the model and stays out of CI by design.
+**Not verified here:** the rendered diagrams. Bundle membership only takes effect when the `web`
+profile restarts, and restarting it would end the session that installed the plugins. Restart
+non-interactively — under a TTY `dsh web` exits 0 without serving
+(`knowledge/gotchas/web-ui-exits-under-a-tty.md`) — then check that a ```mermaid fence renders in a
+session and that the `/` menu lists `canvas-diagram`.
 
 ## Files Changed
 
-- `AGENTS.md`
-- `feature_list.json`, `progress.md`, `session-handoff.md`, `init.sh`
-- `docs/specs/README.md`, `docs/plans/README.md`
-- `docs/specs/2026-09-10-ci-verification-design.md`, `docs/plans/2026-09-10-ci-verification.md`
-- `docs/specs/2026-09-10-ponytail-update-script-design.md`, `docs/plans/2026-09-10-ponytail-update-script.md`
-- `scripts/update-ponytail.sh`, `skills/README.md`
-- `knowledge/**`
-- `.github/workflows/verify.yml`, `.nvmrc`
-- `README.md`
+- `plugins.json`, `scripts/install-plugins.sh`
+- `install.sh`, `init.sh`
+- `docs/plugins.md`, `docs/specs/2026-09-11-plugins-manifest-design.md`, `docs/plans/2026-09-11-plugins-manifest.md`
+- `knowledge/runbooks/dsh-plugins.md`, `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`, `knowledge/index.md`, `knowledge/log.md`, category indexes
+- `README.md`, `feature_list.json`, `progress.md`, `session-handoff.md`
 
 ## Decisions Made
 
-- Adopt harness + OKF → `knowledge/decisions/adopt-harness-and-okf.md`
-- Pin the exact dsh version (CVE-2026-82533 floor) → `knowledge/decisions/pin-dsh-version.md`
-- `init.sh` verifies offline; `doctor.sh` verifies the machine → `knowledge/decisions/init-stays-offline.md`
-- `feat-003` shipped directly on `main` (one additive workflow; no PR isolation) → `docs/specs/2026-09-10-ci-verification-design.md`
-- Ponytail skills stay byte-identical upstream; the pin lives in the script → `knowledge/runbooks/update-ponytail-skills.md`
+- Plugins are declared in `plugins.json`; the profile directory is machine-local and never committed → `knowledge/runbooks/dsh-plugins.md`
+- npm `dsh-mermaid@0.4.0` (MrmoLabs) over `AKS1st/dsh-mermaid` v0.5.0 — no `prepare` build, so no machine-local `allowBuilds` edit → `knowledge/gotchas/dsh-mermaid-npm-name-collision.md`
+- The applier warns rather than aborts in `install.sh`, matching how the doctor is treated
+- `./init.sh` stays offline; plugin and ponytail syncs need network and stay out of CI
 
 ## Blockers / Risks
 
 - None blocking.
-- `superpowers:*` skills are not installed in this environment, so the design and plan steps were done by hand (recorded in the `feat-003` and `feat-004` specs). If they are installed later, `brainstorming` / `writing-plans` can take over.
-- `scripts/update-ponytail.sh` needs network, so upstream drift is only noticed when someone runs it — unlike the `./init.sh` gate, which CI enforces.
+- The plugins are on disk but **not live** until the `web` profile restarts.
+- `scripts/install-plugins.sh` only adds: removing an entry from `plugins.json` does not uninstall it, so removal is two steps (`dsh plugin … remove` plus the manifest edit).
+- Third-party plugin code is not audited here; pins and provenance are, and the sandbox confines writes only.
+- `superpowers:*` skills are still not installed, so specs/plans are written by hand (noted in each spec).
 - `feat-005` remains queued; `install.sh` still does not check the Node major (a candidate feature).
 
 ## Next Session Startup

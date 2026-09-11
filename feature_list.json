@@ -45,6 +45,16 @@
       "dependencies": ["feat-001"],
       "status": "not-started",
       "evidence": ""
+    },
+    {
+      "id": "feat-006",
+      "name": "Reproducible dsh plugin set",
+      "description": "Declare third-party dsh plugins in plugins.json, apply them from install.sh via scripts/install-plugins.sh, and pin versions so a second machine installs the same. Seeds the set with dsh-mermaid and dsh-diagram for the web profile.",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "plugins.json + scripts/install-plugins.sh (2026-09-11): installed dsh-mermaid@0.4.0 and dsh-diagram@0.4.0 into the web profile (exit 0, 2 added); dsh --profile web --dump-default-config shows # == dsh-mermaid and # == dsh-diagram; re-run reports 0 added / 2 already installed; init.sh guards fail on latest, a range, a duplicate, a missing field and a dropped install.sh call; ./init.sh exit 0; harness audit 100/100.",
+      "spec": "docs/specs/2026-09-11-plugins-manifest-design.md",
+      "plan": "docs/plans/2026-09-11-plugins-manifest.md"
     }
   ]
 }

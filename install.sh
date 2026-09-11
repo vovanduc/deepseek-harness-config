@@ -80,6 +80,21 @@ if [ -d "$REPO/skills" ]; then
   say "linked $count skill(s) into $DSH_HOME/skills"
 fi
 
+# --- 4b. plugins ------------------------------------------------------------
+# Dsh installs a plugin into $DSH_HOME/profiles/<name> — machine state this repo
+# does not track — so plugins.json in git is what makes a second machine match.
+# A failure warns rather than aborts: settings and skills are already in place.
+if [ -f "$REPO/plugins.json" ]; then
+  if command -v dsh >/dev/null 2>&1; then
+    say "applying the plugin set from plugins.json"
+    if ! "$REPO/scripts/install-plugins.sh"; then
+      warn "the plugin set is incomplete — re-run scripts/install-plugins.sh"
+    fi
+  else
+    warn "dsh is not on PATH; skipping plugins — re-run scripts/install-plugins.sh after install"
+  fi
+fi
+
 # --- 5. verify --------------------------------------------------------------
 say "verifying"
 if ! "$REPO/scripts/doctor.sh"; then

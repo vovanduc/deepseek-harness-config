@@ -9,3 +9,4 @@ title: Runbooks — operational procedures
 - [What CI checks](ci-verification.md) — and what it deliberately does not.
 - [Add a model or a provider](add-model-or-provider.md) — edit, declare the key, verify.
 - [Update the ponytail skills from upstream](update-ponytail-skills.md) — drift check, apply, and what is not synced.
+- [Declare, apply and verify dsh plugins](dsh-plugins.md) — `plugins.json` is the source of truth; profiles are machine-local.

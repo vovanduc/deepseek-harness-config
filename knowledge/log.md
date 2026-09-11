@@ -29,3 +29,5 @@ title: Knowledge change log
 2026-09-10 — runbook/ci-verification — updated: action majors bumped to v7 (Node 24 runner runtime, clears the Node 20 deprecation annotation).
 2026-09-10 — runbook/update-ponytail-skills — added: pinned upstream ref, drift check vs apply, and what is deliberately not synced (built `.openclaw` copy, plugin hooks).
 2026-09-11 — gotcha/web-ui-exits-under-a-tty — added: `dsh web` exits 0 without serving when stdout is a TTY; supervise it non-interactively.
+2026-09-11 — runbook/dsh-plugins — added: `plugins.json` as the source of truth, apply/verify/restart, and the `prepare`/`allowBuilds` failure mode.
+2026-09-11 — gotcha/dsh-mermaid-npm-name-collision — added: the npm name is held by MrmoLabs, not the AKS1st repo a plugin list links.
