@@ -35,6 +35,35 @@ through on `deepseek-flash`. In-harness `read_image` refuses until the model ent
 `input: [text, image]` — see
 [../gotchas/hand-declared-models-text-only.md](../gotchas/hand-declared-models-text-only.md).
 
+# Measured cost profile (2026-09-12)
+
+One real session — 100 requests over 21 minutes, reading 13 images and building a 3D scene —
+taken from the session log, not from an estimate:
+
+| | tokens |
+|---|---|
+| cache read (hit) | 11 055 232 |
+| uncached input | 130 031 |
+| output | 105 912 |
+| cache hit rate | **98.84 %** |
+| context, first → last request | 17 106 → 185 718 |
+
+At DeepSeek's list price for `deepseek-flash` that is **$0.116** off-peak and $0.232 at peak;
+the session ran on a Saturday, so off-peak applies. The identical token count at cache-miss
+prices would be **$1.74** — so the prefix cache is the whole story: after the first request,
+almost every call adds only 150–250 uncached tokens no matter how large the context has grown.
+
+Read it yourself. Usage rides on each `assistant/message` event under `data.usage`:
+
+```bash
+zstd -dc ~/.dsh/sessions/*/session-*/session.v3.jsonl.zstd \
+  | jq -c 'select(.type=="assistant/message") | .data.usage' \
+  | jq -s '{cached: map(.cacheReadTokens)|add, uncached: map(.inputTokens)|add, output: map(.outputTokens)|add}'
+```
+
+On the OpenCode Go plan the marginal cost is flat; the dollar figure is the list-price
+equivalent, which is what makes it useful for comparing routes.
+
 # Related
 
 [../../docs/models.md](../../docs/models.md) · [../gotchas/missing-session-id.md](../gotchas/missing-session-id.md) · [../gotchas/compat-flags.md](../gotchas/compat-flags.md) · [../runbooks/add-model-or-provider.md](../runbooks/add-model-or-provider.md)
