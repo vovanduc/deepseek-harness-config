@@ -6,6 +6,29 @@ Three.js"* does with Claude?
 
 The answer, measured rather than assumed, is in `feature_list.json` → `feat-012`.
 
+## Live
+
+**https://office-3d-ep1.pages.dev/** — Cloudflare Pages, project `office-3d`, account
+`Vovanduc1989@gmail.com's Account`. The `-ep1` suffix is Cloudflare's, added because the bare
+`office-3d` name was taken.
+
+Redeploy after a change to `index.html` (only the two files that are actually served are staged —
+deploying the folder would publish `verify.mjs` and the 1.2 MB of screenshots too):
+
+```bash
+rm -rf /tmp/office3d && mkdir -p /tmp/office3d/vendor
+cp index.html /tmp/office3d/ && cp vendor/three.min.js /tmp/office3d/vendor/
+npx wrangler@4 pages deploy /tmp/office3d --project-name=office-3d --branch=main
+```
+
+A custom subdomain needs no nameserver change: `vovanduc.tech` resolves through OrderBox DNS, and
+Cloudflare Pages accepts a subdomain pointed at `<project>.pages.dev` with a CNAME. Only an apex
+domain would have to become a Cloudflare zone.
+
+Verified 2026-09-12 against the live URL, not against localhost: `node verify.mjs --url
+https://office-3d-ep1.pages.dev/` exits 0 with the same scene and no console errors, and a pixel
+diff of the live day render against the local one reports **0 % difference**.
+
 ## What is here
 
 ```
