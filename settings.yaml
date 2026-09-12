@@ -31,6 +31,12 @@ llm-pi-ai:
           name: DeepSeek V4.1 Flash
           contextWindow: 1048576
           maxTokens: 65536
+          # A model declared by hand infers nothing, including input modality,
+          # so without this line every image is refused before it is sent.
+          # Verified against this gateway 2026-09-12: a 64x64 PNG of a blue
+          # square came back as `A blue square.` See docs/models.md -> Images.
+          # deepseek-v4-pro is text-only on purpose; do not copy this line there.
+          input: [text, image]
         - id: deepseek-v4-pro
           name: DeepSeek V4 Pro
           contextWindow: 1048576

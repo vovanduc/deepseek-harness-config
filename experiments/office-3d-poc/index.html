@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Office 3D — proof of concept (deepseek-flash)</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#dfe7ea;color:#1b2228;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  /* The canvas owns the layout box; the renderer owns the backing buffer. */
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .hud{position:fixed}
+  .glass{background:rgba(255,255,255,.80);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.7);box-shadow:0 14px 44px rgba(18,32,44,.16)}
+
+  #panel{left:22px;top:22px;width:300px;border-radius:18px;padding:18px 18px 14px}
+  .brand{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:#7a8892}
+  .dot{width:9px;height:9px;border-radius:50%;background:#e0483f}
+  #panel h1{margin:12px 0 8px;font-size:25px;line-height:1.14;letter-spacing:-.02em;font-weight:800}
+  #panel p{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:#54626c}
+  .addr{font-size:12px;color:#6b7883;display:flex;gap:7px;align-items:flex-start;margin-bottom:14px}
+  .addr b{color:#e0483f;font-weight:600}
+  .views{display:flex;flex-direction:column;gap:6px}
+  .views button{all:unset;cursor:pointer;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:600;
+    color:#3d4a54;display:flex;align-items:center;gap:9px;transition:background .15s,color .15s}
+  .views button:hover{background:rgba(20,30,40,.06)}
+  .views button[aria-pressed="true"]{background:#e0483f;color:#fff}
+  .views .ico{width:16px;text-align:center;opacity:.8;font-size:12px}
+
+  #modes{right:22px;top:22px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  #modes button{all:unset;cursor:pointer;border-radius:999px;padding:9px 14px;font-size:12.5px;font-weight:600;
+    color:#3d4a54;display:flex;align-items:center;gap:7px}
+  #modes button[aria-pressed="true"]{background:#e0483f;color:#fff}
+
+  #chips{left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px;border-radius:999px;
+    padding:7px;flex-wrap:wrap;justify-content:center;max-width:min(680px,calc(100vw - 44px))}
+  #chips button{all:unset;cursor:pointer;border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;
+    color:#3d4a54;white-space:nowrap}
+  #chips button[aria-pressed="true"]{background:#2b3a45;color:#fff}
+
+  #zoom{left:22px;bottom:22px;display:flex;gap:7px}
+  #zoom button{all:unset;cursor:pointer;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    font-size:15px;font-weight:700;color:#3d4a54}
+  #zoom button:hover{background:rgba(20,30,40,.07)}
+
+  #stats{right:22px;bottom:22px;width:236px;border-radius:16px;padding:14px 16px}
+  #stats h2{margin:0 0 10px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#7a8892;font-weight:700}
+  #stats dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:7px 12px;font-size:12.5px}
+  #stats dt{color:#66737d}
+  #stats dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+  #card{right:22px;top:96px;width:272px;border-radius:16px;padding:16px;display:none}
+  #card.on{display:block}
+  #card h3{margin:0 0 3px;font-size:16px;font-weight:800;letter-spacing:-.01em}
+  #card .sub{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#e0483f;font-weight:700;margin-bottom:11px}
+  #card dl{margin:0 0 13px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px}
+  #card dt{color:#66737d}
+  #card dd{margin:0;font-weight:600}
+  #card .row{display:flex;gap:8px}
+  #card .row button{all:unset;cursor:pointer;flex:1;text-align:center;border-radius:10px;padding:9px;
+    font-size:12.5px;font-weight:700;background:#eef1f3;color:#33414b}
+  #card .row button.primary{background:#e0483f;color:#fff}
+  #card .x{position:absolute;right:12px;top:12px;cursor:pointer;color:#93a0a9;font-size:16px;line-height:1}
+
+  #labels{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+  .label{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap;cursor:pointer;pointer-events:auto;
+    background:rgba(255,255,255,.94);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;
+    color:#26333c;box-shadow:0 4px 14px rgba(18,32,44,.18);border:1px solid rgba(255,255,255,.9)}
+  .label::after{content:"";position:absolute;left:50%;bottom:-5px;width:1px;height:5px;background:rgba(40,60,75,.35)}
+
+  #hint{left:50%;bottom:74px;transform:translateX(-50%);font-size:11.5px;color:#5d6b75;
+    background:rgba(255,255,255,.7);padding:5px 12px;border-radius:999px;white-space:nowrap}
+
+  @media (max-width:1080px){
+    #panel{width:250px}#stats{display:none}#card{display:none!important}
+  }
+  @media (max-width:720px){
+    #panel{left:12px;top:12px;width:calc(100vw - 24px)}
+    #panel h1{font-size:19px}#modes{top:auto;bottom:78px;left:12px;right:12px;justify-content:center}
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="labels"></div>
+
+<aside id="panel" class="hud glass">
+  <div class="brand"><span class="dot"></span> Proof of concept · 3D office</div>
+  <h1>Một văn phòng dựng bằng một file HTML.</h1>
+  <p>Toàn bộ cảnh, giao diện và tương tác nằm trong một file duy nhất. Three.js r160 nằm cạnh nó trong <code>vendor/</code>.</p>
+  <div class="addr">📍 <span>22 × 30 m · 2 tầng + sân thượng<br><b>Kéo để xoay · chuột phải để di chuyển</b></span></div>
+  <nav class="views" id="views"></nav>
+</aside>
+
+<div id="modes" class="hud">
+  <button id="btnNight" class="glass" aria-pressed="false">🌙 Ban đêm</button>
+  <button id="btnSpin" class="glass" aria-pressed="false">🔄 Tự xoay</button>
+</div>
+
+<div id="card" class="hud glass">
+  <span class="x" id="cardClose">✕</span>
+  <div class="sub" id="cardKind">Khu vực</div>
+  <h3 id="cardName">—</h3>
+  <dl>
+    <dt>Vị trí</dt><dd id="cardPos">—</dd>
+    <dt>Sức chứa</dt><dd id="cardCap">—</dd>
+  </dl>
+  <div class="row">
+    <button class="primary" id="cardGo">Nhìn gần</button>
+    <button id="cardNext">Tiếp →</button>
+  </div>
+</div>
+
+<div id="chips" class="hud glass">
+  <button id="chipPeople" aria-pressed="false">Nhân sự</button>
+  <button id="chipLabels" aria-pressed="true">Nhãn</button>
+  <button id="chipWire" aria-pressed="false">Khung dây</button>
+</div>
+
+<div id="zoom" class="hud glass">
+  <button id="zHome" title="Về mặc định">⌂</button>
+  <button id="zIn" title="Phóng to">+</button>
+  <button id="zOut" title="Thu nhỏ">−</button>
+</div>
+
+<section id="stats" class="hud glass">
+  <h2>Thông số mô hình</h2>
+  <dl>
+    <dt>Diện tích đất</dt><dd>~22 × 30 m</dd>
+    <dt>Tầng</dt><dd>2 + sân thượng</dd>
+    <dt>Chỗ ngồi</dt><dd id="statSeats">0</dd>
+    <dt>Cây xanh</dt><dd id="statTrees">0</dd>
+    <dt>Draw call</dt><dd id="statCalls">0</dd>
+  </dl>
+</section>
+
+<div id="hint" class="hud">Kéo để xoay · Chuột phải để di chuyển · Cuộn để zoom · Click nhãn để xem</div>
+
+<script src="vendor/three.min.js"></script>
+<script>
+"use strict";
+/* ------------------------------------------------------------------ *
+ * Office 3D — proof of concept.
+ * Deliberately applies every trap from the Coder Horizon post, plus the
+ * corrections this repo found: setPixelRatio, sRGB output, CSS-box label
+ * projection, and shared unit geometry instead of thousands of BoxGeometry.
+ * ------------------------------------------------------------------ */
+
+const PAL = {
+  grass:'#a8bd96', dirt:'#c2b79f', road:'#9ba1a3', line:'#e9ece8',
+  walk:'#d2d5cf', deck:'#e6e1d6', wall:'#f4f0e8', wall2:'#e7e0d2',
+  wood:'#b6804e', wood2:'#8e6238', frame:'#2c3234', glass:'#bcd9e3',
+  leaf:'#7ea473', leaf2:'#93b487', trunk:'#8a6a4a', stone:'#cdc7b9',
+  water:'#8ec6d8', accent:'#e0483f', pot:'#bfae95', roof:'#dcd6c9'
+};
+
+const canvas   = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace   = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled  = true;
+renderer.shadowMap.type     = THREE.PCFSoftShadowMap;
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 0.5, 600);
+
+/* --- materials (shared; swapping them at runtime is how night mode works) */
+function std(color, o) {
+  o = o || {};
+  return new THREE.MeshStandardMaterial({
+    color, roughness: o.rough === undefined ? 0.92 : o.rough,
+    metalness: o.metal || 0,
+    transparent: !!o.opacity, opacity: o.opacity === undefined ? 1 : o.opacity,
+    emissive: o.emissive || 0x000000, emissiveIntensity: o.ei === undefined ? 0 : o.ei,
+    side: o.side || THREE.FrontSide, flatShading: !!o.flat
+  });
+}
+const M = {
+  grass:std(PAL.grass), dirt:std(PAL.dirt), road:std(PAL.road), line:std(PAL.line,{rough:1}),
+  walk:std(PAL.walk), deck:std(PAL.deck), wall:std(PAL.wall), wall2:std(PAL.wall2),
+  wood:std(PAL.wood), wood2:std(PAL.wood2), frame:std(PAL.frame,{rough:0.6,metal:0.15}),
+  glass:std(PAL.glass,{rough:0.08,metal:0.1,opacity:0.30,emissive:'#a9cddb',ei:0.14}), stone:std(PAL.stone),
+  mullion:std('#4b565c',{rough:0.5,metal:0.2}),
+  rail:std('#e9ece9',{rough:0.62}),
+  leaf:std(PAL.leaf,{flat:true}), leaf2:std(PAL.leaf2,{flat:true}), trunk:std(PAL.trunk),
+  water:std(PAL.water,{rough:0.15,metal:0.3,opacity:0.82}), accent:std(PAL.accent),
+  pot:std(PAL.pot), roof:std(PAL.roof), white:std('#ffffff',{rough:0.7}),
+  win:std('#ffe6b8',{emissive:0xffcf7a, ei:0}),      // windows: dark by day, warm at night
+  lamp:std('#fff2d0',{emissive:0xffd68a, ei:0.25}),
+  skin:std('#d9a887',{rough:0.8}), shirt:std('#4f7fa8',{rough:0.9}),
+  carBody:std('#e9ecee',{rough:0.35,metal:0.4}), carGlass:std('#5d7b8c',{rough:0.2,metal:0.3})
+};
+
+/* --- one unit box, reused everywhere; scale sets the size -------------- */
+const UNIT = new THREE.BoxGeometry(1, 1, 1);
+function box(w, h, d, mat, x, y, z, parent) {
+  const m = new THREE.Mesh(UNIT, mat);
+  m.scale.set(w, h, d); m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  (parent || scene).add(m);
+  return m;
+}
+/* Cylinders are cheap enough to build per use; a few hundred is fine. */
+function cyl(rt, rb, h, seg, mat, x, y, z, parent) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+  (parent || scene).add(m);
+  return m;
+}
+function instanced(geo, mat, count, fill, parent) {
+  const im = new THREE.InstancedMesh(geo, mat, count);
+  const m4 = new THREE.Matrix4();
+  // Scale MUST start at 1. `new THREE.Vector3()` is (0,0,0), so every instance
+  // whose fill() only sets a position composes a zero-scale matrix and vanishes
+  // without a single console warning. That silently ate the fence pickets, the
+  // pillars, the roof posts, the blinds and the balcony flowers.
+  const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(1, 1, 1);
+  for (let i = 0; i < count; i++) {
+    p.set(0, 0, 0); q.identity(); s.set(1, 1, 1);
+    fill(i, p, q, s);
+    m4.compose(p, q, s);
+    im.setMatrixAt(i, m4);
+  }
+  im.instanceMatrix.needsUpdate = true;
+  im.castShadow = true; im.receiveShadow = true;
+  (parent || scene).add(im);
+  return im;
+}
+
+/* --- sky --------------------------------------------------------------- */
+function skyTexture(top, mid, bottom) {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, top); g.addColorStop(0.55, mid); g.addColorStop(1, bottom);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const skyDay   = skyTexture('#9dc4e0', '#cfe2ea', '#eef2ec');
+const skyNight = skyTexture('#0d1a2e', '#1d3350', '#3d5470');
+const sky = new THREE.Mesh(
+  new THREE.SphereGeometry(260, 24, 16),
+  new THREE.MeshBasicMaterial({ map: skyDay, side: THREE.BackSide, fog: false })
+);
+scene.add(sky);
+
+/* --- lights ------------------------------------------------------------ */
+const hemi = new THREE.HemisphereLight(0xdff0ff, 0x9a8f78, 0.85);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2dc, 2.4);
+sun.position.set(34, 46, 26);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 160;
+sun.shadow.camera.left = -52; sun.shadow.camera.right = 52;
+sun.shadow.camera.top = 52;   sun.shadow.camera.bottom = -52;
+sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.03;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+
+/* --- groups, so a "cut" view is just visibility ------------------------ */
+const gSite = new THREE.Group();    // ground, street, yard
+const gF1   = new THREE.Group();    // ground floor
+const gF2   = new THREE.Group();    // first floor
+const gRoof = new THREE.Group();    // roof terrace + parapet
+const gTrees = new THREE.Group();
+const gPeople = new THREE.Group();
+scene.add(gSite, gF1, gF2, gRoof, gTrees, gPeople);
+gPeople.visible = false;
+
+/* --- site -------------------------------------------------------------- */
+const groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), M.grass);
+groundPlane.rotation.x = -Math.PI / 2;   // rotate, then add — never group.add(m).rotation = ...
+groundPlane.position.y = -0.06;
+groundPlane.receiveShadow = true;
+gSite.add(groundPlane);
+
+const PLOT = { x1:-11, x2:11, z1:-16, z2:14 };
+box(22, 0.24, 30, M.dirt, 0, -0.08, -1, gSite);                    // the plot itself
+box(14.6, 0.16, 12.6, M.deck, 0, 0.16, -3.5, gSite);               // building apron
+
+// street + sidewalk in front (+Z)
+box(90, 0.2, 9, M.road, 0, -0.03, 22.5, gSite);
+box(90, 0.28, 2.6, M.walk, 0, 0.02, 16.2, gSite);
+for (let i = -8; i <= 8; i++) box(2.4, 0.04, 0.16, M.line, i * 5.2, 0.08, 22.5, gSite);  // dashes
+box(90, 0.06, 0.14, M.accent, 0, 0.17, 17.3, gSite);               // red curb stripe
+
+// front path from the gate to the entrance
+box(3.2, 0.14, 11.2, M.walk, 0, 0.09, 8.4, gSite);
+// pond
+const pond = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 0.3, 22), M.water);
+pond.position.set(-7, 0.1, 8); pond.receiveShadow = true;
+gSite.add(pond);
+instanced(new THREE.IcosahedronGeometry(0.42, 0), M.stone, 12, (i, p, q, s) => {
+  const a = (i / 12) * Math.PI * 2;
+  p.set(-7 + Math.cos(a) * 2.9, 0.16, 8 + Math.sin(a) * 2.9);
+  s.setScalar(0.7 + (i % 3) * 0.22);
+  q.setFromEuler(new THREE.Euler(0, a, 0));
+}, gSite);
+
+/* --- fence + gate ------------------------------------------------------ */
+const PICKET = new THREE.BoxGeometry(0.075, 1.05, 0.075);
+const PILLAR = new THREE.BoxGeometry(0.46, 1.62, 0.46);
+const picketRuns = [];
+function fenceRun(ax, az, bx, bz, skip) {
+  const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz);
+  const ang = Math.atan2(dx, dz);
+  const midX = (ax + bx) / 2, midZ = (az + bz) / 2;
+  const rail = box(0.14, 0.16, len, M.white, midX, 1.32, midZ, gSite); rail.rotation.y = ang;
+  const base = box(0.16, 0.14, len, M.white, midX, 0.16, midZ, gSite); base.rotation.y = ang;
+  const n = Math.max(2, Math.floor(len / 0.3));
+  const offs = [];
+  for (let i = 1; i < n; i++) {
+    const t = i / n;
+    if (skip && t > skip[0] && t < skip[1]) continue;
+    offs.push(t);
+  }
+  picketRuns.push({ count: offs.length, ax, az, dx, dz });
+  instanced(PICKET, M.white, offs.length, (i, p) => {
+    const t = offs[i];
+    p.set(ax + dx * t, 0.75, az + dz * t);
+  }, gSite);
+  const pillars = Math.max(2, Math.round(len / 3.4));
+  instanced(PILLAR, M.stone, pillars + 1, (i, p) => {
+    const t = i / pillars;
+    p.set(ax + dx * t, 0.82, az + dz * t);
+  }, gSite);
+}
+fenceRun(PLOT.x1, PLOT.z2, PLOT.x2, PLOT.z2, [0.40, 0.60]);   // front, gate gap in the middle
+fenceRun(PLOT.x1, PLOT.z1, PLOT.x1, PLOT.z2);                  // left
+fenceRun(PLOT.x2, PLOT.z1, PLOT.x2, PLOT.z2);                  // right
+fenceRun(PLOT.x1, PLOT.z1, PLOT.x2, PLOT.z1);                  // back
+
+// wooden gate
+const gate = new THREE.Group();
+for (let s = -1; s <= 1; s += 2) {
+  const leaf = new THREE.Group();
+  for (let i = 0; i < 9; i++) box(0.34, 1.75, 0.07, M.wood, s * (0.16 + i * 0.24), 0.95, 0, leaf);
+  leaf.position.z = 0;
+  gate.add(leaf);
+}
+box(0.5, 2.3, 0.5, M.stone, -2.9, 1.15, 0, gate);
+box(0.5, 2.3, 0.5, M.stone,  2.9, 1.15, 0, gate);
+box(6.3, 0.22, 0.42, M.wood2, 0, 1.98, 0, gate);
+gate.position.set(0, 0, PLOT.z2);
+gSite.add(gate);
+
+// gate lamps (brighter at night) + a small sign board
+for (const gx of [-2.9, 2.9]) {
+  box(0.3, 0.3, 0.3, M.lamp, gx, 2.35, 0.32, gSite);
+}
+box(2.6, 0.5, 0.09, M.white, 0, 1.5, PLOT.z2 - 0.06, gSite);
+
+/* --- building ---------------------------------------------------------- */
+const B = { cx:0, cz:-3.5, w:14, d:12, h1:3.3, h2:3.2 };
+
+// ground floor: glass box with dark mullions
+box(B.w, B.h1, B.d, M.glass, B.cx, B.h1 / 2, B.cz, gF1);
+// Curtain wall: one mullion every ~2.35 m. A mullion every metre reads as a
+// jail cell, not a glazed facade — the first render proved that.
+for (let i = -3; i <= 3; i++) {
+  box(0.12, B.h1, 0.16, M.mullion, i * 2.33, B.h1 / 2, B.cz + B.d / 2, gF1);
+  box(0.12, B.h1, 0.16, M.mullion, i * 2.33, B.h1 / 2, B.cz - B.d / 2, gF1);
+}
+for (let i = -2; i <= 2; i++) {
+  box(0.16, B.h1, 0.12, M.mullion, B.cx + B.w / 2, B.h1 / 2, B.cz + i * 2.4, gF1);
+  box(0.16, B.h1, 0.12, M.mullion, B.cx - B.w / 2, B.h1 / 2, B.cz + i * 2.4, gF1);
+}
+box(B.w + 0.24, 0.34, 0.22, M.mullion, B.cx, B.h1 - 0.17, B.cz + B.d / 2, gF1);   // head transom
+// entrance: recessed doors + a flat canopy, so the facade has a front door
+box(3.4, 0.28, 1.6, M.deck, B.cx, 3.34, B.cz + B.d / 2 + 0.6, gF1);
+box(0.16, 3.3, 0.5, M.mullion, B.cx - 1.7, B.h1 / 2, B.cz + B.d / 2 + 0.2, gF1);
+box(0.16, 3.3, 0.5, M.mullion, B.cx + 1.7, B.h1 / 2, B.cz + B.d / 2 + 0.2, gF1);
+box(1.5, 2.5, 0.1, M.frame,  B.cx - 0.78, 1.25, B.cz + B.d / 2 + 0.02, gF1);
+box(1.5, 2.5, 0.1, M.frame,  B.cx + 0.78, 1.25, B.cz + B.d / 2 + 0.02, gF1);
+box(0.06, 1.0, 0.06, M.mullion, B.cx - 0.12, 1.0, B.cz + B.d / 2 + 0.09, gF1);
+box(0.06, 1.0, 0.06, M.mullion, B.cx + 0.12, 1.0, B.cz + B.d / 2 + 0.09, gF1);
+box(B.w + 0.5, 0.22, B.d + 0.5, M.frame, B.cx, 0.11, B.cz, gF1);          // plinth
+box(2.8, 0.16, 1.5, M.walk, B.cx, 0.24, B.cz + B.d / 2 + 0.7, gF1);       // entrance step
+// ground-floor interior: desks + a counter, seen through the glass
+let seats = 0;
+function desk(x, z, rot, parent) {
+  const g = new THREE.Group();
+  box(1.5, 0.07, 0.78, M.white, 0, 0.74, 0, g);
+  box(0.06, 0.72, 0.06, M.frame, -0.68, 0.37, -0.3, g);
+  box(0.06, 0.72, 0.06, M.frame,  0.68, 0.37, -0.3, g);
+  box(0.06, 0.72, 0.06, M.frame, -0.68, 0.37,  0.3, g);
+  box(0.06, 0.72, 0.06, M.frame,  0.68, 0.37,  0.3, g);
+  box(0.55, 0.34, 0.06, M.frame, 0, 0.98, -0.28, g);       // monitor
+  g.position.set(x, 0, z); g.rotation.y = rot;
+  (parent || gF1).add(g);
+  seats++;
+  return g;
+}
+for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+  desk(B.cx - 4.8 + c * 3.2, B.cz + 0.6 + r * 2.6, r ? Math.PI : 0);
+}
+box(3.4, 0.95, 0.7, M.wood, B.cx, 0.48, B.cz - 4.6, gF1);                  // reception counter
+// Seen through the glazing the ground floor read as a black hole, so it gets
+// its own fill light: the sun never reaches behind the balcony overhang.
+for (const lx of [-4.5, 4.5]) {
+  const fill = new THREE.PointLight(0xfff1de, 60, 26, 2);
+  fill.position.set(lx, 2.7, B.cz + 1.5);
+  gF1.add(fill);
+}
+
+// first floor: solid wall + timber slats + balcony
+box(B.w, B.h2, B.d, M.wall, B.cx, B.h1 + 0.12 + B.h2 / 2, B.cz, gF2);
+// Bamboo blinds. At 0.09 m wide on a 0.55 m pitch they were invisible at
+// overview distance; 0.2 m on a 0.65 m pitch actually reads as slats.
+const SLAT = new THREE.BoxGeometry(0.2, 2.15, 0.09);
+instanced(SLAT, M.wood, 20, (i, p) => {
+  p.set(B.cx - 6.2 + i * 0.65, B.h1 + 1.35, B.cz + B.d / 2 + 0.06);
+}, gF2);
+for (let i = 0; i < 5; i++) {
+  box(1.9, 1.25, 0.1, M.win, B.cx - 4.6 + i * 2.3, B.h1 + 1.9, B.cz - B.d / 2 - 0.06, gF2);
+}
+box(B.w + 1.5, 0.2, 1.5, M.deck, B.cx, B.h1 + 0.12, B.cz + B.d / 2 + 0.55, gF2);   // balcony slab
+instanced(new THREE.BoxGeometry(0.055, 1.0, 0.055), M.rail, 26, (i, p) => {
+  p.set(B.cx - 6.9 + i * 0.55, B.h1 + 0.72, B.cz + B.d / 2 + 1.2);
+}, gF2);
+box(B.w + 1.5, 0.07, 0.09, M.rail, B.cx, B.h1 + 1.2, B.cz + B.d / 2 + 1.2, gF2);
+box(B.w + 1.5, 0.05, 0.06, M.rail, B.cx, B.h1 + 0.72, B.cz + B.d / 2 + 1.2, gF2);
+// flower boxes on the balcony rail
+instanced(new THREE.IcosahedronGeometry(0.16, 0), M.accent, 18, (i, p) => {
+  p.set(B.cx - 6.5 + i * 0.75, B.h1 + 1.28, B.cz + B.d / 2 + 1.18);
+}, gF2);
+// first-floor interior
+for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+  desk(B.cx - 4.6 + c * 2.4, B.cz - 2.4 + r * 4.2, r ? Math.PI : 0, gF2);
+}
+
+// roof terrace: parapet + planter + stair head + deck
+box(B.w + 0.9, 0.2, B.d + 0.9, M.roof, B.cx, B.h1 + B.h2 + 0.34, B.cz, gRoof);
+// Parapet: two thin light rails read as a railing. One thick dark rail at the
+// top read as a black picture frame lying on the roof in the first render.
+const PAR = [[B.w + 0.9, 0.09, B.cx, B.cz + (B.d + 0.9) / 2],
+             [B.w + 0.9, 0.09, B.cx, B.cz - (B.d + 0.9) / 2],
+             [0.09, B.d + 0.9, B.cx + (B.w + 0.9) / 2, B.cz],
+             [0.09, B.d + 0.9, B.cx - (B.w + 0.9) / 2, B.cz]];
+for (const y of [B.h1 + B.h2 + 1.44, B.h1 + B.h2 + 1.05]) {
+  for (const [w, d, x, z] of PAR) box(w, 0.06, d, M.rail, x, y, z, gRoof);
+}
+instanced(new THREE.BoxGeometry(0.05, 1.02, 0.05), M.rail, 84, (i, p) => {
+  const per = 21, side = Math.floor(i / per), k = i % per, t = (k + 1) / (per + 1);
+  const hw = (B.w + 0.9) / 2, hd = (B.d + 0.9) / 2;
+  if (side === 0) p.set(B.cx - hw + t * B.w * 1.02, B.h1 + B.h2 + 0.95, B.cz + hd);
+  else if (side === 1) p.set(B.cx - hw + t * B.w * 1.02, B.h1 + B.h2 + 0.95, B.cz - hd);
+  else if (side === 2) p.set(B.cx + hw, B.h1 + B.h2 + 0.95, B.cz - hd + t * B.d * 1.02);
+  else p.set(B.cx - hw, B.h1 + B.h2 + 0.95, B.cz - hd + t * B.d * 1.02);
+}, gRoof);
+box(3.0, 1.5, 3.0, M.wall2, B.cx - 5.0, B.h1 + B.h2 + 1.2, B.cz - 3.6, gRoof);   // stair head
+box(1.9, 0.62, 1.0, M.pot, B.cx + 4.6, B.h1 + B.h2 + 0.75, B.cz + 3.6, gRoof);   // planter
+instanced(new THREE.IcosahedronGeometry(0.62, 0), M.leaf2, 8, (i, p) => {
+  p.set(B.cx + 3.9 + (i % 4) * 0.5, B.h1 + B.h2 + 1.55 + (i % 3) * 0.16, B.cz + 3.6 + Math.floor(i / 4) * 0.42);
+  p.y += (i % 2) * 0.1;
+}, gRoof);
+for (const [x, z] of [[B.cx - 5.6, B.cz + 4.2], [B.cx + 6.2, B.cz - 4.4]]) {
+  const p = cyl(0.42, 0.32, 0.85, 10, M.pot, x, B.h1 + B.h2 + 0.85, z, gRoof);
+  const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 0), M.leaf);
+  f.position.set(x, B.h1 + B.h2 + 1.85, z); f.castShadow = true; gRoof.add(f);
+}
+
+/* --- trees + neighbours ------------------------------------------------ */
+const TREE_SPOTS = [[-9.4, 2.4, 1.15], [-8.2, 12.2, 0.85], [9.2, 3.0, 1.0],
+                    [8.6, 12.6, 0.8], [-9.6, -13.6, 0.9], [9.4, -13.2, 0.95], [4.6, 6.2, 0.62]];
+let treeCount = 0;
+for (const [x, z, s] of TREE_SPOTS) {
+  const g = new THREE.Group();
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.17 * s, 0.24 * s, 1.7 * s, 6), M.trunk);
+  t.position.y = 0.85 * s; t.castShadow = true; g.add(t);
+  for (let i = 0; i < 3; i++) {
+    const r = (1.55 - i * 0.38) * s;
+    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), i % 2 ? M.leaf2 : M.leaf);
+    c.position.y = (1.8 + i * 0.92) * s;
+    c.rotation.y = i * 0.7;
+    c.castShadow = true; c.receiveShadow = true;
+    g.add(c);
+  }
+  g.position.set(x, 0, z);
+  gTrees.add(g); treeCount++;
+}
+// pale neighbour blocks, kept far enough back that they frame the plot
+// instead of swallowing the camera — at 19 m they filled a close view entirely
+for (const [x, z, w, d, h] of [[-33, 6, 11, 15, 8], [33, 4, 12, 17, 9],
+                               [-34, -20, 12, 13, 7], [34, -20, 12, 13, 7.5],
+                               [-9, -42, 16, 11, 7], [11, -42, 14, 11, 6]]) {
+  box(w, h, d, M.wall2, x, h / 2, z, gSite);
+  box(w + 0.6, 0.3, d + 0.6, M.roof, x, h + 0.15, z, gSite);
+}
+
+/* --- people + a parked car -------------------------------------------- */
+const BODY = new THREE.CapsuleGeometry(0.2, 0.62, 4, 8);
+const HEADS = [];
+for (let i = 0; i < 22; i++) {
+  const x = B.cx - 4.6 + (i % 6) * 1.9, z = B.cz - 3.2 + Math.floor(i / 6) * 3.0;
+  const b = new THREE.Mesh(BODY, i % 2 ? M.shirt : M.frame);
+  b.position.set(x, 1.24, z); b.castShadow = true; gPeople.add(b);
+  const h = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), M.skin);
+  h.position.set(x, 1.72, z); h.castShadow = true; gPeople.add(h);
+  HEADS.push(h);
+}
+(function car() {
+  const g = new THREE.Group();
+  box(4.2, 0.72, 1.75, M.carBody, 0, 0.62, 0, g);
+  box(2.1, 0.62, 1.6, M.carGlass, -0.15, 1.24, 0, g);
+  const W = new THREE.CylinderGeometry(0.33, 0.33, 0.22, 12);
+  for (const [wx, wz] of [[-1.35, 0.88], [1.35, 0.88], [-1.35, -0.88], [1.35, -0.88]]) {
+    const w = new THREE.Mesh(W, M.frame);
+    w.rotation.x = Math.PI / 2; w.position.set(wx, 0.33, wz); w.castShadow = true; g.add(w);
+  }
+  g.position.set(7.6, 0, 19.4); g.rotation.y = -0.06;
+  gSite.add(g);
+})();
+// scooters on the sidewalk, the way the reference keeps them
+instanced(new THREE.BoxGeometry(0.5, 0.62, 1.7), M.accent, 7, (i, p) => {
+  p.set(-8.4 + i * 1.5, 0.48, 15.5);
+}, gSite);
+
+/* --- zones, views, labels --------------------------------------------- */
+const V = new THREE.Vector3();
+
+/* Zone "fly to" distances are the same order as the view presets: a 14 m
+   building needs ~45-55 m of standoff at this field of view, not 20-25. */
+const ZONES = [
+  { id:'gate',  kind:'Lối vào',   name:'Cổng chính',        pos:'Mặt tiền, phía nam',   cap:'2 làn xe',
+    anchor:new THREE.Vector3(0, 2.6, 14), views:['overview','front'], cam:[0, 2, 8, 26, 0.5, 1.1] },
+  { id:'yard',  kind:'Tiểu cảnh', name:'Sân trước & hồ cá', pos:'Trước toà nhà',        cap:'~40 khách',
+    anchor:new THREE.Vector3(-6.5, 0.6, 8.5), views:['overview','front'], cam:[-6, 1, 8, 28, 0.85, 1.05] },
+  { id:'recep', kind:'Tầng 1',    name:'Lễ tân & open space', pos:'Tầng trệt',          cap:'8 chỗ + quầy',
+    anchor:new THREE.Vector3(0, 1.6, 2.6), views:['overview','f1'], cam:[0, 1.5, 0, 40, 0.6, 0.98] },
+  { id:'open',  kind:'Tầng 2',    name:'Open space & ban công', pos:'Tầng 2',           cap:'8 chỗ',
+    anchor:new THREE.Vector3(0, 5.2, 2.4), views:['overview','f2'], cam:[0, 5, 0, 42, 0.6, 0.98] },
+  { id:'roof',  kind:'Sân thượng',name:'Sân thượng & vườn',   pos:'Mái',                 cap:'~30 người',
+    anchor:new THREE.Vector3(0, 8.4, -3.5), views:['overview','roof'], cam:[0, 7.5, -3.5, 40, 0.9, 0.9] },
+  { id:'park',  kind:'Ngoài',     name:'Bãi xe & vỉa hè',     pos:'Vỉa hè phía nam',     cap:'7 xe máy + 1 ô tô',
+    anchor:new THREE.Vector3(0, 1.2, 18.5), views:['overview','front'], cam:[0, 1, 18, 34, 0.15, 1.15] }
+];
+const VIEWS = [
+  { id:'overview', label:'Toàn cảnh',        ico:'◱', cut:0 },
+  { id:'f1',       label:'Tầng 1 · Cắt lớp', ico:'▤', cut:1 },
+  { id:'f2',       label:'Tầng 2 · Cắt lớp', ico:'▥', cut:2 },
+  { id:'roof',     label:'Sân thượng',       ico:'☀', cut:3 },
+  { id:'front',    label:'Sân trước & hồ cá',ico:'❀', cut:0 }
+];
+const HOME = { target:new THREE.Vector3(0, 3.4, 0), radius:82, theta:0.62, phi:0.92 };
+const cam = { target:HOME.target.clone(), radius:HOME.radius, theta:HOME.theta, phi:HOME.phi };
+let activeView = 'overview';
+
+const viewsEl = document.getElementById('views');
+for (const v of VIEWS) {
+  const b = document.createElement('button');
+  b.innerHTML = '<span class="ico">' + v.ico + '</span>' + v.label;
+  b.dataset.view = v.id;
+  b.addEventListener('click', () => setView(v.id));
+  viewsEl.appendChild(b);
+}
+const labelsEl = document.getElementById('labels');
+for (const z of ZONES) {
+  const el = document.createElement('div');
+  el.className = 'label'; el.textContent = z.name; el.style.display = 'none';
+  el.addEventListener('click', () => openCard(z.id));
+  z.el = el;
+  labelsEl.appendChild(el);
+}
+
+let cut = 0;
+function setView(id) {
+  activeView = id;
+  const v = VIEWS.find(x => x.id === id);
+  cut = v ? v.cut : 0;
+  if (cut === 1)      { gF2.visible = false; gRoof.visible = false; }
+  else if (cut === 2) { gF2.visible = true;  gRoof.visible = false; }
+  else                { gF2.visible = true;  gRoof.visible = true;  }
+  for (const b of viewsEl.children) b.setAttribute('aria-pressed', String(b.dataset.view === id));
+  if (id === 'overview') flyTo(HOME.target, HOME.radius, HOME.theta, HOME.phi);
+  else if (id === 'front') flyTo(new THREE.Vector3(-2, 1.6, 6), 46, 0.22, 1.12);
+  else if (id === 'roof') flyTo(new THREE.Vector3(0, 7, -3.5), 44, 0.9, 0.92);
+  else if (id === 'f2') flyTo(new THREE.Vector3(0, 5, -3.5), 52, 0.62, 0.98);
+  else flyTo(new THREE.Vector3(0, 1.5, -3.5), 52, 0.62, 0.96);
+  syncLabels();
+}
+function syncLabels() {
+  for (const z of ZONES) {
+    z.visible = z.views.indexOf(activeView) !== -1;
+  }
+}
+
+/* --- camera flight ----------------------------------------------------- */
+let fly = null;
+function flyTo(target, radius, theta, phi) {
+  fly = { t:0, dur:0.9,
+    from:{ target:cam.target.clone(), radius:cam.radius, theta:cam.theta, phi:cam.phi },
+    to:{ target:target.clone(), radius, theta, phi } };
+}
+function stepFly(dt) {
+  if (!fly) return;
+  fly.t = Math.min(1, fly.t + dt / fly.dur);
+  const e = fly.t < 0.5 ? 2 * fly.t * fly.t : 1 - Math.pow(-2 * fly.t + 2, 2) / 2;
+  cam.target.lerpVectors(fly.from.target, fly.to.target, e);
+  cam.radius = fly.from.radius + (fly.to.radius - fly.from.radius) * e;
+  cam.phi    = fly.from.phi    + (fly.to.phi    - fly.from.phi)    * e;
+  let dth = fly.to.theta - fly.from.theta;
+  while (dth >  Math.PI) dth -= Math.PI * 2;
+  while (dth < -Math.PI) dth += Math.PI * 2;
+  cam.theta = fly.from.theta + dth * e;
+  if (fly.t >= 1) fly = null;
+}
+
+/* --- controls ---------------------------------------------------------- */
+let drag = null;
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  drag = { x:e.clientX, y:e.clientY, pan:(e.button === 2 || e.shiftKey) };
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag.x = e.clientX; drag.y = e.clientY;
+  if (drag.pan) {
+    const k = cam.radius * 0.0016;
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+    const up    = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+    cam.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+  } else {
+    cam.theta -= dx * 0.006;
+    cam.phi = Math.max(0.18, Math.min(1.45, cam.phi - dy * 0.005));
+  }
+  fly = null;
+});
+const stop = () => { drag = null; };
+canvas.addEventListener('pointerup', stop);
+canvas.addEventListener('pointercancel', stop);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
+  e.preventDefault(); fly = null;
+  cam.radius = Math.max(12, Math.min(120, cam.radius * (1 + Math.sign(e.deltaY) * 0.09)));
+}, { passive:false });
+// pinch
+let pinch = null;
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length !== 2) return;
+  const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                       e.touches[0].clientY - e.touches[1].clientY);
+  if (pinch) cam.radius = Math.max(12, Math.min(120, cam.radius * (pinch / d)));
+  pinch = d;
+}, { passive:true });
+canvas.addEventListener('touchend', () => { pinch = null; });
+
+document.getElementById('zIn').onclick   = () => { fly = null; cam.radius = Math.max(12, cam.radius * 0.86); };
+document.getElementById('zOut').onclick  = () => { fly = null; cam.radius = Math.min(120, cam.radius * 1.16); };
+document.getElementById('zHome').onclick = () => setView('overview');
+
+/* --- mode buttons ------------------------------------------------------ */
+let night = false, spin = false;
+const btnNight = document.getElementById('btnNight'), btnSpin = document.getElementById('btnSpin');
+btnNight.onclick = () => {
+  night = !night;
+  btnNight.setAttribute('aria-pressed', String(night));
+  sky.material.map = night ? skyNight : skyDay;
+  sky.material.needsUpdate = true;
+  hemi.intensity = night ? 0.22 : 0.85;
+  sun.intensity  = night ? 0.28 : 2.4;
+  sun.color.set(night ? 0x9db6d8 : 0xfff2dc);
+  for (const k of ['win', 'lamp']) M[k].emissiveIntensity = night ? (k === 'win' ? 1.15 : 1.5) : (k === 'lamp' ? 0.25 : 0);
+};
+btnSpin.onclick = () => {
+  spin = !spin;
+  btnSpin.setAttribute('aria-pressed', String(spin));
+};
+const chipPeople = document.getElementById('chipPeople'), chipLabels = document.getElementById('chipLabels'),
+      chipWire   = document.getElementById('chipWire');
+chipPeople.onclick = () => {
+  gPeople.visible = !gPeople.visible;
+  chipPeople.setAttribute('aria-pressed', String(gPeople.visible));
+};
+chipLabels.onclick = () => {
+  const on = chipLabels.getAttribute('aria-pressed') !== 'true';
+  chipLabels.setAttribute('aria-pressed', String(on));
+  for (const z of ZONES) if (!on) z.el.style.display = 'none';
+};
+chipWire.onclick = () => {
+  const on = chipWire.getAttribute('aria-pressed') !== 'true';
+  chipWire.setAttribute('aria-pressed', String(on));
+  for (const k in M) { M[k].wireframe = on; M[k].needsUpdate = true; }
+};
+
+/* --- info card --------------------------------------------------------- */
+const card = document.getElementById('card');
+let cardIndex = -1;
+function openCard(id) {
+  cardIndex = ZONES.findIndex(z => z.id === id);
+  const z = ZONES[cardIndex];
+  document.getElementById('cardKind').textContent = z.kind;
+  document.getElementById('cardName').textContent = z.name;
+  document.getElementById('cardPos').textContent  = z.pos;
+  document.getElementById('cardCap').textContent  = z.cap;
+  card.classList.add('on');
+}
+document.getElementById('cardClose').onclick = () => card.classList.remove('on');
+document.getElementById('cardNext').onclick  = () => openCard(ZONES[(cardIndex + 1) % ZONES.length].id);
+document.getElementById('cardGo').onclick    = () => {
+  const z = ZONES[cardIndex];
+  const c = z.cam;
+  flyTo(new THREE.Vector3(c[0], c[1], c[2]), c[3], c[4], c[5]);
+};
+
+/* --- stats + resize ---------------------------------------------------- */
+let drawCalls = 0;
+setInterval(() => { drawCalls = renderer.info.render.calls; }, 400);
+document.getElementById('statSeats').textContent = String(seats);
+document.getElementById('statTrees').textContent = String(treeCount + 10);
+
+function resize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', resize);
+
+/* --- loop -------------------------------------------------------------- */
+const HALF = new THREE.Vector2();
+const clock = new THREE.Clock();
+function tick() {
+  const dt = Math.min(0.05, clock.getDelta());
+  stepFly(dt);
+  if (spin && !drag && !fly) cam.theta += dt * 0.13;
+
+  camera.position.set(
+    cam.target.x + cam.radius * Math.sin(cam.phi) * Math.sin(cam.theta),
+    cam.target.y + cam.radius * Math.cos(cam.phi),
+    cam.target.z + cam.radius * Math.sin(cam.phi) * Math.cos(cam.theta)
+  );
+  camera.lookAt(cam.target);
+  sky.position.copy(camera.position);
+
+  renderer.render(scene, camera);
+
+  // HTML labels: project each frame from the world position. No cached offsets.
+  HALF.set(window.innerWidth / 2, window.innerHeight / 2);
+  const showLabels = chipLabels.getAttribute('aria-pressed') === 'true';
+  for (const z of ZONES) {
+    if (!showLabels || !z.visible) { z.el.style.display = 'none'; continue; }
+    V.copy(z.anchor).project(camera);           // -> NDC
+    if (V.z > 1) { z.el.style.display = 'none'; continue; }   // behind the camera
+    z.el.style.display = 'block';
+    z.el.style.transform =
+      'translate(-50%,-50%) translate(' + (HALF.x + V.x * HALF.x).toFixed(1) + 'px,' +
+                                           (HALF.y - V.y * HALF.y).toFixed(1) + 'px)';
+  }
+  document.getElementById('statCalls').textContent = String(drawCalls);
+}
+setView('overview');
+renderer.setAnimationLoop(tick);
+window.__poc = { ready:true, seats, trees:treeCount, zones:ZONES.length };
+</script>
+</body>
+</html>

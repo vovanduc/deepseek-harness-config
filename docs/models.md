@@ -24,6 +24,7 @@ llm-pi-ai:
           name: DeepSeek V4.1 Flash
           contextWindow: 1048576
           maxTokens: 65536
+          input: [text, image]
 ```
 
 Why each line is there:
@@ -40,6 +41,8 @@ Why each line is there:
   stated. A configured `maxTokens` also becomes that model's per-request output default.
 - `apiKeyEnv` — the **name** of the environment variable holding the key. See
   [Credentials](#credentials).
+- `input` — the modalities this model accepts. Omit it and the model is text-only; see
+  [Images](#images).
 
 Models this route also serves (list them the same way if you want them in the picker):
 
@@ -112,6 +115,12 @@ Hand-declared models are text-only until they say otherwise:
 
 A refused image is refused *before* it is sent, naming the model — and the attachment stays in the
 session log, so the session keeps retrying it until you move off that model.
+
+Capability is the model's, not the flag's. This route serves two models and only one of them has
+vision: DeepSeek's own model table marks **Vision as supported on `deepseek-flash` and not
+supported on `deepseek-v4-pro`**. Measured against the gateway on 2026-09-12 with a 64×64 PNG of a
+blue square, `deepseek-flash` answered `A blue square.` So declare `input: [text, image]` on Flash
+and leave it off Pro, and do the whole image-driven workflow on Flash.
 
 ### Correcting one model of a built-in provider
 

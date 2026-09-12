@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-11 13:25 (+07) — `web` profile restarted, the five plugins are live
-**Active Feature:** none — `feat-009` closed; the backlog is empty
+**Last Updated:** 2026-09-12 10:2x (+07) — image input is live on `deepseek-flash`; the 3D PoC is built and verified
+**Active Feature:** none — `feat-010`, `feat-011` and `feat-012` closed; the backlog is empty
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
@@ -13,7 +13,7 @@
 
 - [x] Adopted the DCNET harness: state files, `docs/specs/` + `docs/plans/`, and `AGENTS.md` as the routing pointer.
 - [x] `init.sh` — offline gate: script syntax, feature-list shape, `settings.yaml` parse + default-model resolution, skill frontmatter, plugin manifest, and the wiring guards for CI, the plugin applier, the pre-flight and the Node check.
-- [x] OKF `knowledge/` bundle: index + log + six category indexes + 29 concepts.
+- [x] OKF `knowledge/` bundle: index + log + six category indexes + 31 concepts.
 - [x] `feat-003`: CI runs `./init.sh` on push and pull request; `.nvmrc` pins Node 22.
 - [x] `feat-004`: `scripts/update-ponytail.sh` — drift check and `--apply` against a pinned upstream ref.
 - [x] `feat-005`: `scripts/doctor.sh --json` — one machine-readable readiness object.
@@ -21,6 +21,9 @@
 - [x] `feat-007`: `scripts/plugin-preflight.sh` refuses a plugin the pinned dsh cannot run.
 - [x] `feat-008`: `scripts/check-node.sh` — Node 20 floor from `.nvmrc`, run before anything is created.
 - [x] `feat-009`: plugin set expanded from 1 to 5 on the `web` profile after a pre-flight survey of the curated list — installed, composed, and **live** since the `dsh web` restart (roster + `client.js` 200 + Settings tabs).
+- [x] `feat-010`: restored the `$DSH_HOME/settings.yaml` symlink — it had drifted to a regular file, so **no repo edit was reaching the server** while every check still passed.
+- [x] `feat-011`: `input: [text, image]` on `deepseek-flash`, proven at the gateway first, then in-harness: `read_image` now returns real images.
+- [x] `feat-012`: `experiments/office-3d-poc/` — a one-file Three.js office with a headless-Chromium verification loop, built and corrected over three render-and-look rounds.
 - [x] `./init.sh` passes; harness audit 100/100; knowledge links resolve.
 
 ### What's In Progress
@@ -31,18 +34,17 @@
 
 **No open features.** Candidates, in the order they would pay off:
 
-1. **Restart the `web` profile** so the four new bundles actually load, then verify from the shell
-   with the served-roster recipe in `docs/plugins.md` (registry inline in `/`, `client.js` → 200).
-   Until then nothing proves the client halves activate — the pre-flight admits it cannot see that.
-2. Configure the new plugins' credentials: `modsearch` (search route/keys) and
-   `dsh-vision-toolkit` (vision model/key). They are installed but unconfigured.
-3. Turn the 2026-09-11 category survey into a chosen shortlist. The ranked catalog (3 431 entries
-   with stars/downloads per category) is at `/tmp/adp/report.md` — ephemeral; move anything worth
-   keeping into `knowledge/`. Categories worth a real decision next: Memory (vs this repo's OKF),
-   Skills/Workflow (vs `dcnet-workflow`), Security (`api-relay-audit` for the relay, permission
-   rules), Development & Runtime (`dsh-undo-savepoint`, `dsh-context-doctor`).
-4. A mock boot of a throwaway profile would catch the compiled-only client failures the pre-flight
-   admits it cannot see.
+1. **Raise the output ceiling if long single-file generations matter.** The route declares
+   `maxTokens: 65536`; DeepSeek's own API allows 384 K. The PoC file is 37 KB (~11 K tokens) so it
+   never came close, but the article's 3–4 k-line scenes would.
+2. Give `modsearch` a search key (`TAVILY_API_KEY` / `EXA_API_KEY` / `firecrawl.apiKey`) — the fetch
+   route is keyless, search is not, and `web_search` is the one tool still unusable.
+3. Exercise `find_dsh_plugin`, `read_page`, `x_search` and `vision_*` from a **fresh** session —
+   composition is per session, and this one was opened before the last restart.
+4. Decide whether `experiments/` belongs in a repo whose `AGENTS.md` says the deliverable is
+   `settings.yaml`, `skills/`, `install.sh` and `scripts/doctor.sh`. It is currently 700 KB of
+   vendored Three.js plus a scene; if the answer is no, it moves out and only the README finding
+   stays.
 5. The two official optional bundles (`@deepseek-ai/dsh-subagent-codex`,
    `@deepseek-ai/dsh-subagent-claude-code`) are installable and host-only; each needs a preset tool
    row, so it is its own feature.
@@ -165,13 +167,55 @@
   `x_search`, `web_search` (blocked on the engine key above) and the `vision_*` set. A session opened
   before the restart does not carry them at all.
 
+## 2026-09-12 — Image input, and a 3D scene built from a reference
+
+Started from a Substack post (*"Dựng mô hình 3D văn phòng công ty bằng Three.js"*) and the question
+"can DeepSeek do the same?". Answering it needed two things this repo did not have.
+
+- [x] **Baseline failed, and not because of the repo.** `./init.sh` died with `EPERM` on
+  `$DSH_HOME/profiles/headless/cordis.yml` under a `workspace-write` file policy. Recorded as
+  [gotcha/init-sh-needs-dsh-home-write](knowledge/gotchas/init-sh-needs-dsh-home-write.md); the gate
+  passes once `$DSH_HOME` is writable. A first-ever `./init.sh` run in an agent session will hit this.
+- [x] **`feat-010` — the symlink had drifted.** `~/.dsh/settings.yaml` was a regular 2 543-byte file
+  carrying an app-written `ui-onboarding` key, not the link `install.sh` creates. Every repo edit of
+  `settings.yaml` had been a no-op for the server, and `init.sh` plus `doctor.sh` both passed anyway.
+  `./install.sh --no-install` moved it to `settings.yaml.bak-20260912-101238` and linked the repo
+  file; `doctor.sh` → READY (6 ok), 5 plugins already installed, 6 skills linked. New gotcha.
+- [x] **`feat-011` — images work, and the flag was the only thing missing.** Proved the *route* first,
+  straight at `https://opencode.ai/zen/go/v1`: text-only control → `pong`; a 64×64 PNG of a blue
+  square at `detail: low` → **`A blue square.`** Then added `input: [text, image]` to the
+  hand-declared `deepseek-flash` entry. `read_image` went from
+  `model "deepseek-flash" does not declare image input` to describing a real 1600×1000 screenshot.
+  No restart; the adapter re-reads per request. `deepseek-v4-pro` stays text-only — DeepSeek's model
+  table marks vision unsupported there, so the whole image workflow runs on Flash.
+- [x] **`feat-012` — the PoC, and what it caught.** `experiments/office-3d-poc/`: `index.html` (37 KB,
+  one file, `file://`, no build), vendored Three.js r160 UMD (sha256 `170c6789…1d49fa`), and
+  `verify.mjs` — a headless-Chromium CDP loop with **no npm dependencies** (Node 22 ships `fetch` and
+  `WebSocket`). It fails the run on any console error or a missing `window.__poc`, so a clean log
+  cannot pass for a working scene.
+- [x] **The verification loop earned its keep.** The first run was clean — and wrong. Three rounds of
+  *render it, look at it* fixed a ground floor that read as a black void, a roof railing that read as
+  a black picture frame, and neighbour blocks filling the whole frame. When pixels stayed ambiguous,
+  `verify.mjs --eval` queried the live scene and found the real bug: `instanced()` was composing
+  `Matrix4` with the default `new THREE.Vector3()` **scale of (0,0,0)**, so every instance without an
+  explicit `setScalar` was erased silently — fence pickets, stone pillars, roof posts, bamboo blinds,
+  balcony flowers and the parked scooters all at once, with zero console output.
+- [x] **Post-mortem on the source post is in the README.** Five transferable findings; the two worth
+  repeating here: "console has no errors" is not verification, and the post's *single file* rule is
+  unnecessary — a relative classic `<script src>` also runs offline from `file://`, which keeps the
+  scene at 37 KB instead of ~700 KB. The post also pins Three.js **r128** (April 2021); r160 is the
+  last UMD release and the right compromise while `file://` rules out ES modules.
+- [x] `./init.sh` exit 0; `scripts/doctor.sh` READY; knowledge links resolve.
+
 ## Notes for Next Session
 
 The route is `AGENTS.md` → `./init.sh` → `feature_list.json` → `progress.md` → `knowledge/index.md`.
 Reproducibility rests on four pins — `dsh.version`, `.nvmrc`, `plugins.json`, and the ponytail
-`UPSTREAM_REF`. The plugin pin grew from 1 to 5 this session, and the two filters that guard it are
-now written down: `npm view <spec> repository.url` for identity, `plugin-preflight.sh` for release
-compatibility. The restart is done and the five bundles are live; `read_page` and the vision defaults
-are the two paths verified end to end. The next concrete step is a search engine key for `modsearch`,
-then exercising the tools from a **fresh** session (composition is per session) — usage for each is in
-`docs/plugins.md` → *How to use them*.
+`UPSTREAM_REF` — plus one invariant this session found by accident: **`~/.dsh/settings.yaml` must be
+a symlink**, or nothing you write here reaches the running server. Check the arrow, not just the
+file. The image route is now open on `deepseek-flash`, which makes the harness usable for any
+screenshot-driven work, not just this PoC.
+
+`./init.sh` needs write access to `$DSH_HOME`; under a `workspace-write` sandbox it stops at the
+compose step with a bare Node `EPERM`. That is the sandbox, not the repo — say which one you hit
+rather than reporting a red gate.

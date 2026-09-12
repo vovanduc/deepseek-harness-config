@@ -11,3 +11,10 @@ logs/
 .agent-presets/
 
 .DS_Store
+
+# Vision-toolkit scratch output (crops, previews, traces).
+.dsh-vision-toolkit/
+
+# Renders from the 3D proof of concept. Regenerate with
+#   node experiments/office-3d-poc/verify.mjs
+experiments/office-3d-poc/shot-*.png
