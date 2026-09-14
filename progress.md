@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-12 10:2x (+07) — image input is live on `deepseek-flash`; the 3D PoC is built and verified
+**Last Updated:** 2026-09-14 11:3x (+07) — `web` profile restarted (process had exited); five plugins live again
 **Active Feature:** none — `feat-010`, `feat-011` and `feat-012` closed; the backlog is empty
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
@@ -147,6 +147,7 @@
   contributed tabs *Plugin Market* (dshmarket), *Vision* (dsh-vision-toolkit, reports a read-only key
   source) and, under *Plugins*, *Search engine (ModSearch)*. `--dump-config` alone would not have
   shown any of this.
+- [x] **Second restart (2026-09-14 11:3x).** See the dated section at the foot of this file.
 - [x] **`modsearch` engine state measured, not assumed (2026-09-11).** `npx @liustack/modsearch doctor`
   from the profile dir resolves: fetch → `local` READY keyless (**verified**: `read_page` route on
   `example.com` → 200 with content, links, uncertainty); search → `firecrawl` keyless **refused from
@@ -206,6 +207,38 @@ Started from a Substack post (*"Dựng mô hình 3D văn phòng công ty bằng 
   scene at 37 KB instead of ~700 KB. The post also pins Three.js **r128** (April 2021); r160 is the
   last UMD release and the right compromise while `file://` rules out ES modules.
 - [x] `./init.sh` exit 0; `scripts/doctor.sh` READY; knowledge links resolve.
+
+## 2026-09-14 — Restarting the web profile, and how to prove it came back
+
+`dsh web` had exited on its own (`hub ps` → `exited exit=0`, uptime 1d1h), so the UI was down. Restart
+is the `web` profile's real gate: the bundle set is composed at boot, so nothing about the plugins is
+proven until the process is up again and the client halves are fetched.
+
+- [x] Started it the way the profile needs — non-interactively, no TTY:
+
+  ```bash
+  hub start name=dsh-web application=dsh args=["web","--port","4319","--no-open"] pty=false
+  ```
+
+  Ready in **6.7 s** (pid 50166), log clean. `pty=false` matters: under a PTY, `dsh web` exits 0
+  without serving (`knowledge/gotchas/web-ui-exits-under-a-tty.md`).
+
+- [x] **The one-time token changed, and the old one is dead.** Read the new one from the startup log,
+  then confirm it rather than assuming: new `?token=…` → `303` (sets the `dsh-auth-*` cookie), then
+  `curl -b <jar> /` → **200**; the token from the previous boot → **401**. Capture the token
+  immediately after the start — that is the only moment it is printed.
+
+- [x] **Five plugins still live.** Roster (57 entries) under the new `rev 4dbf33d860c2e8bb` carries
+  `dsh-mermaid`, `dshmarket`, `@liustack/modsearch` and `@anionex/dsh-vision-toolkit`; each
+  `client.js` → **200** (23 550 / 42 614 / 567 583 / 143 381 bytes). `dsh-find-plugin` is host-only —
+  no client bundle, so its absence is correct. Headless Chromium: UI renders, **0 console errors**,
+  and the previous session list is intact.
+
+- [x] `./init.sh` exit 0, `feat-009`…`feat-012` all `done`, harness audit 100/100, 129 links / 0 broken.
+
+Note for next time: `curl -s ... | grep -o '{"id":"dsh-[^"]*'` **misses the scoped plugins** — use
+`'{"id":"[^"]*","url":"[^"]*"'` and match names individually, or `@liustack/modsearch` and
+`@anionex/dsh-vision-toolkit` will look missing when they are served fine.
 
 ## Notes for Next Session
 
