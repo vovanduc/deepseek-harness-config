@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-15 12:0x (+07) — ER / business-flow diagrams proven end to end; BPMN path measured
+**Last Updated:** 2026-09-15 14:5x (+07) — real BPMN 2.0 leave-request diagram drawn and verified
 **Active Feature:** none — `feat-010`…`feat-012` closed; the backlog is empty
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
@@ -368,3 +368,43 @@ Tested by actually asking the running `dsh web`, not by reasoning about it.
 - [ ] Housekeeping decided explicitly, not swept in: `diagrams/` is my test prompt's mermaid output
   (the very mislabel this skill exists to prevent) — left untracked; `.gitignore` now states *why*
   `.gstack/` is ignored (it holds `terminal-internal-token`, a credential).
+
+## 2026-09-15 (evening) — a real leave-request BPMN, and why the DI is hand-placed
+
+- [x] Ask: *"vẽ sơ đồ BPMN 2.0 cho quy trình xin nghỉ phép: nhân viên gửi đơn, quản lý duyệt, nếu
+  nghỉ trên 3 ngày thì HR duyệt nữa, rồi cập nhật lịch."*
+- [x] `diagrams/xin-nghi-phep.source.bpmn` — 13 flow nodes, 14 sequence flows, **no DI**. Main path
+  on one row, HR approval on a second, a merge gateway and the reject row on a third. Roles are
+  label prefixes (`[NV]` / `[QL]` / `[HR]` / `[HT]`) because `bpmn-auto-layout` drops `bpmn:Lane`.
+- [x] `diagrams/make-bpmn.mjs` — injects the hand-placed DI into the DI-free source and **refuses to
+  write if a shape/edge no longer matches a source element id**. Needed because auto-layout routed
+  three flows down one channel (they render as one line) — see the runbook trap.
+- [x] Rendered `xin-nghi-phep.png` (1107×472) + `.svg` with `bpmn-to-image@0.10.0`; inspected three
+  zoomed crops — no edge-label/gateway collisions.
+- [x] `diagrams/xin-nghi-phep.html` — offline bpmn-js viewer reusing
+  `experiments/bpmn-viewer/vendor/*`; XML inlined. `preview-sim.mjs` packs 4 assets / 340 326 B, and
+  a headless check reports `pass:true`, **39 elements, 0 console errors** on both `file://` and the
+  simulated document-preview pipeline.
+- [x] `./init.sh` exit 0 — but only with `DSH_HOME` pointed at a throwaway workspace dir; the default
+  run dies `EPERM` on `$DSH_HOME/profiles/headless/cordis.yml`, the documented sandbox limit
+  (`gotcha/init-sh-needs-dsh-home-write`), not a repo defect. Cleaned up after.
+- [ ] Honest limits: no swimlanes (runbook trap: auto-layout cannot keep lanes, and lanes were not
+  asked for); the files are still untracked — `git` in this sandbox carries `GIT_CONFIG_COUNT` with
+  no matching `GIT_CONFIG_KEY_*`, so `git status`/`log` fail until those vars are unset.
+
+### Closing check — the skill does trigger
+
+A fresh headless session, asked only *"Vẽ cho tôi sơ đồ BPMN 2.0 cho quy trình xin nghỉ phép…"* with
+**no mention of this repo**, produced real BPMN: `diagrams/xin-nghi-phep.{source.bpmn,bpmn,html,svg,png}`
++ a `make-bpmn.mjs` regeneration checker. It used this skill's vocabulary unprompted (`*.source.bpmn`
+with no DI, `bpmn-to-image`, the `#fit` self-check it carried into its own viewer) and volunteered the
+laneSet limitation before being asked. Verified from here: that viewer renders **39 elements,
+`pass:true`** on `file://`.
+
+It also improved on the skill: `bpmn-auto-layout` had put three distinct flows on one channel (the
+HR-reject path running back 750 px, reading as a single line), so it hand-placed the DI and wrote a
+checker that **refuses to write** when shape/edge ids drift from the source. Worth folding into the
+skill next time.
+
+`diagrams/` (both the mermaid lookalike from the first probe and this real BPMN set) is intentionally
+**left untracked** — it is test output, not this repo's deliverable.

@@ -105,6 +105,15 @@ Two traps that only show up in this host:
 - **Short gateway branches collide their edge labels with the gateway label.** Auto-layout places the
   label at the flow's midpoint; on a short branch that lands on the target diamond. Lengthen the flow
   or shorten the label — this is a layout-engine limitation to note, not a bug to chase.
+- **Auto-layout collapses several branches onto ONE channel.** When a "skip" edge and a
+  merge/return edge both leave the main row, they come back routed along the *same* `y`, so they
+  draw as a single line with arrowheads only at the far ends. Measured 2026-09-15 on a 13-node
+  leave-request process: three sequence flows shared `y=140`, and the HR-reject flow ran 750 px
+  back across the diagram. An explicit merge gateway did not help — auto-layout ranks a merge node
+  as early as its first predecessor, not after its last. For a small process, hand-place the DI and
+  keep it honest: `diagrams/make-bpmn.mjs` injects a hand-written `bpmndi` block into the DI-free
+  source and **refuses to write** if a shape or edge no longer matches an element id in the source,
+  so a renamed node cannot render as a silently missing shape.
 
 ```bash
 cd experiments/bpmn-viewer && node preview-sim.mjs   # reproduces the host pipeline offline
