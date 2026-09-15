@@ -68,7 +68,8 @@ negative. Render, then judge.
   `flowchart TD` — and `dsh-mermaid` draws it. Prompt shape that works: *"vẽ ER diagram cho schema
   này"* / *"vẽ luồng nghiệp vụ mua hàng"*; the model picks the right mermaid type on its own.
 - **BPMN proper:** impossible in mermaid. Model a BPMN-ish process as `flowchart TD` with lanes as
-  `subgraph`, or draw it in drawio/Excalidraw by hand. No dsh plugin does BPMN.
+  `subgraph`, or draw real BPMN 2.0 — verified working without any plugin, see
+  [../runbooks/draw-bpmn-workflow.md](../runbooks/draw-bpmn-workflow.md). No dsh plugin does BPMN.
 - **Do not install** `dsh-drawio`, `dsh-flowchart`, `dsh-visualizer` or `@dsh-local/dsh-diagram` on
   the pinned dsh — all four inject `@deepseek-ai/dsh-client-runtime` and the unresolved service kills
   the whole web boot. A keyword hit or a star count establishes nothing; the gate is

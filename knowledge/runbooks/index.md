@@ -10,3 +10,4 @@ title: Runbooks — operational procedures
 - [Add a model or a provider](add-model-or-provider.md) — edit, declare the key, verify.
 - [Update the ponytail skills from upstream](update-ponytail-skills.md) — drift check, apply, and what is not synced.
 - [Declare, apply and verify dsh plugins](dsh-plugins.md) — `plugins.json` is the source of truth; profiles are machine-local.
+- [Draw a real BPMN workflow](draw-bpmn-workflow.md) — no plugin does it; `bpmn-auto-layout` supplies the DI that `bpmn-js` refuses to render without.

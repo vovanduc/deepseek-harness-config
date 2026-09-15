@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-14 11:3x (+07) — `web` profile restarted (process had exited); five plugins live again
-**Active Feature:** none — `feat-010`, `feat-011` and `feat-012` closed; the backlog is empty
+**Last Updated:** 2026-09-15 12:0x (+07) — ER / business-flow diagrams proven end to end; BPMN path measured
+**Active Feature:** none — `feat-010`…`feat-012` closed; the backlog is empty
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
@@ -45,7 +45,12 @@
    `settings.yaml`, `skills/`, `install.sh` and `scripts/doctor.sh`. It is currently 700 KB of
    vendored Three.js plus a scene; if the answer is no, it moves out and only the README finding
    stays.
-5. The two official optional bundles (`@deepseek-ai/dsh-subagent-codex`,
+5. **Decide whether the BPMN path belongs in the repo.** Verified and written down
+   (`knowledge/runbooks/draw-bpmn-workflow.md`) but living in `/tmp`: either route works — a ~200 KB
+   vendored `bpmn-js` viewer page for interactive viewing, or `bpmn-to-image` for PNG/SVG artifacts
+   (70 MB of deps). Promote to `experiments/` or leave it a recipe; the choice is about where the
+   *diagrams* belong, not about feasibility.
+6. The two official optional bundles (`@deepseek-ai/dsh-subagent-codex`,
    `@deepseek-ai/dsh-subagent-claude-code`) are installable and host-only; each needs a preset tool
    row, so it is its own feature.
 
@@ -239,6 +244,48 @@ proven until the process is up again and the client halves are fetched.
 Note for next time: `curl -s ... | grep -o '{"id":"dsh-[^"]*'` **misses the scoped plugins** — use
 `'{"id":"[^"]*","url":"[^"]*"'` and match names individually, or `@liustack/modsearch` and
 `@anionex/dsh-vision-toolkit` will look missing when they are served fine.
+
+## 2026-09-15 — ER and business-flow diagrams, and whether BPMN is usable here
+
+Started from "is there a plugin for ER diagrams and business flows?" — answer: no plugin, and none is
+needed for the first two. Then: "can BPMN draw workflows?" — yes, BPMN *is* the workflow notation, but
+nothing in the ecosystem supports it, so the path had to be built and measured.
+
+- [x] **The catalogue has no ERD or BPMN plugin at all.** Scanned the full npm `dsh-plugin` keyword
+  (4 449 packages, paginated), the curated index (3 660 entries) and its ranking data
+  (`data/stars.json` 1 484, `data/downloads.json` 624): **0 hits** for BPMN, DBML, PlantUML, ER /
+  entity-relationship / schema diagram. The gap is ecosystem-wide, not a keyword artefact.
+- [x] **ER and business flow already work — no install.** `dsh-mermaid@0.4.0` bundles mermaid 11.17.0;
+  against its own served runtime, `erDiagram` → `<svg class="erDiagram">` (11 776 B) and `flowchart TD`
+  → `<svg class="flowchart">` (17 675 B). Then proved it **through the live UI**: two prompts typed into
+  the composer of the running `dsh web`, both answered and rendered by the plugin, Vietnamese labels
+  and all. See `knowledge/gotchas/diagram-plugins-er-and-flow.md`.
+- [x] **BPMN: mermaid cannot, and every renderer plugin is refused.** `render("bpmn\nA --> B")` →
+  *No diagram type detected*. `dsh-drawio`, `dsh-flowchart`, `dsh-visualizer` and
+  `@dsh-local/dsh-diagram` are all blocked by `./scripts/plugin-preflight.sh` on
+  `@deepseek-ai/dsh-client-runtime`. Note the two failure families are different:
+  `dsh-diagram@0.4.0` dies on `conversationEvents`, these four on `dsh-client-runtime`.
+- [x] **The BPMN path works, and DI is the load-bearing part.** `bpmn-js@18.28.0`'s UMD
+  navigated-viewer (194 KB) + its 3 CSS files render offline from `file://`: a hand-written
+  purchase-approval process → 35 `.djs-element`, SVG 31 KB. The same XML **without**
+  `bpmndi:BPMNDiagram` → `ERROR: no diagram to display`, so `bpmn-auto-layout@1.3.0`
+  (bpmn-io, ⭐101) is mandatory, not optional.
+- [x] **The model can author valid BPMN itself.** Asked the default route for the same process as BPMN
+  XML with no DI: it produced 4 501 bytes with 8 tasks, 3 exclusive gateways and 14 sequence flows;
+  `bpmn-auto-layout` resolved it to 28 shapes / 28 edges, and `bpmn-js` rendered it to a 36 KB SVG.
+  Model → XML → auto-layout → viewer is a closed loop with no hand editing.
+- [x] **MCP as the in-harness route is blocked at the plugin layer.** `dsh-mcp-adapter@0.6.3` fails the
+  pre-flight on the same missing `dsh-client-runtime`; `dsh-mcp-proxy@0.1.0` and
+  `dsh-mcp-lens@0.1.0-rc.9` are host-only and pass. The upstream BPMN MCP servers are tiny
+  (`dattmavis/BPMN-MCP` ⭐12, `oisee/mcp-bpmn` ⭐9 — the `bpmn-js-mcp` repo the search engines cite
+  returns 404), and no official `@deepseek-ai` MCP package is installed here.
+- [x] **Artifact export needs no viewer page.** `bpmn-to-image@0.10.0` (bpmn-js + puppeteer, one
+  command) turned both laid-out inputs into files in **6.5 s** — `purchase.png` 32 945 B, `gen.svg`
+  36 417 B, Vietnamese labels intact. Cost: 70 MB `node_modules`, and it reused an existing
+  `~/.cache/puppeteer` (1.5 GB, dated 2025-12-11) instead of downloading Chrome.
+- [ ] Not done: no BPMN viewer is wired into the harness. Both verified routes live in `/tmp` today —
+  a vendored `bpmn-js` viewer page, or `bpmn-to-image` for artifacts. Whether either belongs in this
+  repo or in the project that needs the diagrams is an open choice, not a technical unknown.
 
 ## Notes for Next Session
 
