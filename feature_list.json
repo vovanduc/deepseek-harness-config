@@ -13,9 +13,7 @@
       "id": "feat-002",
       "name": "Seed the OKF knowledge bundle",
       "description": "Create knowledge/ (OKF v0.1: index + log + per-directory indexes) with concepts for the repo's conventions, decisions, systems, domain glossary, runbooks and gotchas.",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "knowledge/ (2026-09-10): index.md + log.md + 6 category indexes + 18 concepts (3 conventions, 3 decisions, 3 systems, 1 domain, 3 runbooks, 5 gotchas); all internal links resolve (link check).",
       "spec": "knowledge/decisions/adopt-harness-and-okf.md"
@@ -24,9 +22,7 @@
       "id": "feat-003",
       "name": "CI runs the verification gate on push",
       "description": "Add a GitHub Actions workflow that runs ./init.sh on push and pull request, so the offline baseline cannot rot between sessions. Doctor's live-inference check stays out of CI (no key in the runner).",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "./init.sh exit 0 (2026-09-10) with the new CI guard; GitHub Actions run 34457516258 on a5d29af -> success in 9s, no annotations; negative tests: dropping the ./init.sh step, dropping the PyYAML step, or adding a secrets reference each fail the gate, with and without PyYAML on PATH.",
       "plan": "docs/plans/2026-09-10-ci-verification.md",
@@ -36,9 +32,7 @@
       "id": "feat-004",
       "name": "Script the ponytail skill update",
       "description": "skills/README.md documents a manual copy of upstream SKILL.md files. Add scripts/update-ponytail.sh that fetches a pinned upstream release and diffs it, so the update is repeatable instead of hand-run.",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "./scripts/update-ponytail.sh exit 0 (2026-09-10): six skills + LICENSE byte-identical to the pin v4.9.0; --ref v4.8.4 -> exit 1 with ponytail (2 changed lines) and ponytail-help (6); --apply --ref v4.8.4 rewrote exactly those two files and git checkout -- skills restored the tree; --apply at the pin changed nothing; unknown ref -> exit 2; bash -n + shellcheck clean.",
       "spec": "docs/specs/2026-09-10-ponytail-update-script-design.md",
@@ -48,9 +42,7 @@
       "id": "feat-005",
       "name": "doctor.sh --json for automation",
       "description": "Give scripts/doctor.sh a machine-readable mode (one JSON object, stable keys) so init.sh, CI, or a setup script can consume the readiness result instead of parsing coloured text.",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "scripts/doctor.sh --json (2026-09-11): the human run is unchanged and exits 0 (6 ok, READY); --json prints exactly one object with 0 ANSI escapes and the key set exactly status/ok/warn/fail/checks, each check carrying id/status/message; counts, status and exit code are identical in both modes; DSH_HOME pointed at a missing directory -> both modes NOT_READY with exit 1 and a complete object (cli ok, settings fail); --help exit 0, unknown flag exit 2; bash -n + shellcheck clean.",
       "spec": "docs/specs/2026-09-11-doctor-json-design.md",
@@ -60,9 +52,7 @@
       "id": "feat-006",
       "name": "Reproducible dsh plugin set",
       "description": "Declare third-party dsh plugins in plugins.json, apply them from install.sh via scripts/install-plugins.sh, and pin versions so a second machine installs the same. The set is dsh-mermaid for the web profile; dsh-diagram cannot run on the pinned dsh (see evidence).",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "plugins.json + scripts/install-plugins.sh (2026-09-11): installed dsh-mermaid@0.4.0 and dsh-diagram@0.4.0 into the web profile (exit 0, 2 added); dsh --profile web --dump-default-config shows # == dsh-mermaid and # == dsh-diagram; re-run reports 0 added / 2 already installed; init.sh guards fail on latest, a range, a duplicate, a missing field and a dropped install.sh call; ./init.sh exit 0; harness audit 100/100. Amended after the first UI restart (2026-09-11): dsh-diagram@0.4.0 killed the web boot (client injects `conversationEvents`, absent from dsh 0.1.5-rc.1; boot showed 'Failed to load plugins'), so it was removed from the profile and from plugins.json; with dsh-mermaid@0.4.0 alone the UI boots and a ```mermaid fence rendered as an SVG (3 nodes, 7 labels) with Diagram/Code toggle, fullscreen and Download SVG -> mermaid-flowchart.svg (13,379 B). Set is now 1 plugin over the web profile.",
       "spec": "docs/specs/2026-09-11-plugins-manifest-design.md",
@@ -72,9 +62,7 @@
       "id": "feat-007",
       "name": "Pre-flight plugin compatibility",
       "description": "Refuse to install a plugin whose published manifest says it cannot run on the pinned dsh: check dsh.compatibility.dshReleases and resolve every dsh.client.inject id against the pinned install before anything touches a profile.",
-      "dependencies": [
-        "feat-006"
-      ],
+      "dependencies": ["feat-006"],
       "status": "done",
       "evidence": "scripts/plugin-preflight.sh + wiring (2026-09-11): dsh-mermaid@0.4.0 -> exit 0; dsh-diagram@0.4.0 -> exit 1 naming compatibility [0.1.0-rc.6 0.1.0-rc.8 0.1.1-rc.1 0.1.1-rc.2] vs pinned 0.1.5-rc.1; same spec with --dsh-version 0.1.1-rc.2 -> exit 1 via check B alone (@deepseek-ai/dsh-client-runtime unresolved), so the two checks are independent; unpinned -> exit 2; git/unresolvable -> exit 1. End-to-end: with dsh-diagram temporarily back in plugins.json the applier exited 1 ('blocked by pre-flight') and left the profile untouched (dependencies still [dsh-mermaid], no node_modules/dsh-diagram); --skip-preflight is the override. init.sh fails when the call is removed or the script loses +x. ./init.sh exit 0; harness audit 100/100.",
       "spec": "docs/specs/2026-09-11-plugin-preflight-design.md",
@@ -84,9 +72,7 @@
       "id": "feat-008",
       "name": "Check the Node major at install time",
       "description": "install.sh only asks whether node exists, so a Node 18 machine passes and fails later. Add scripts/check-node.sh: fail below the Node 20 floor, warn when the major diverges from .nvmrc, and call it from install.sh before anything is created.",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "scripts/check-node.sh + install.sh wiring (2026-09-11): real node 22.22.2 -> ok exit 0 (matches .nvmrc 22); fake node v18.20.0 first on PATH -> FAIL exit 1 naming the Node 20 floor and the pin; fake v24.1.0 -> warn exit 0; install.sh with the v18 fake and DSH_HOME=/tmp/checknode-dsh exited 1 and did not create DSH_HOME (step 0 precedes every write); init.sh fails when install.sh drops the call or the script loses +x; ./init.sh exit 0; harness audit 100/100.",
       "spec": "docs/specs/2026-09-11-node-major-check-design.md",
@@ -96,10 +82,7 @@
       "id": "feat-009",
       "name": "Expand the plugin set with the vetted web bundle",
       "description": "Add four plugins to plugins.json after pre-flighting each against dsh 0.1.5-rc.1: dshmarket (the plugin market inside Settings), @liustack/modsearch (web search + page fetch, replacing the built-in web_search that has no key on this route), @anionex/dsh-vision-toolkit (vision bridge for the text-only routes) and dsh-find-plugin (agent-side plugin discovery). Candidates rejected by the pre-flight are recorded, not installed.",
-      "dependencies": [
-        "feat-006",
-        "feat-007"
-      ],
+      "dependencies": ["feat-006", "feat-007"],
       "status": "done",
       "evidence": "plugins.json + install run (2026-09-11): 8 candidates pre-flighted against dsh 0.1.5-rc.1 via ./scripts/plugin-preflight.sh — 5 ok (dshmarket@1.45.1, dsh-find-plugin@0.3.7, @liustack/modsearch@5.10.2, @anionex/dsh-vision-toolkit@0.1.44 which is the only one declaring dshReleases[0.1.5-rc.1]=compatible, and the existing dsh-mermaid@0.4.0), 3 blocked with exit 1 on unmet client inject @deepseek-ai/dsh-client-runtime (dsh-vision-router@2.1.5, dsh-web-search-pro@0.1.11, dsh-free-search@0.4.24). ./scripts/install-plugins.sh -> '4 added, 1 already installed, 0 failed, 0 blocked by pre-flight' exit 0; re-run -> '0 added, 5 already installed'; dsh plugin --profile web list = 5 packages; dsh --profile web --dump-default-config prints a layer for each. ./init.sh exit 0 (9 features, 1 in-progress, 5 plugins pinned); harness audit 100/100; 129 knowledge/doc links checked, 0 broken. Not verified: the four client halves are not live until the web profile restarts. Restarted 2026-09-11 13:2x — the four bundles are live: the served page carries a registry entry (each with its own rev) and client.js returns 200 for dsh-mermaid, dshmarket, @liustack/modsearch and @anionex/dsh-vision-toolkit; headless Chromium renders the UI with 0 console errors and Settings shows the Plugin Market, Vision and Search engine (ModSearch) tabs. dsh-find-plugin is host-only: no client bundle by design, activation = the clean boot. Per-plugin runtime state measured with each plugin's own tooling (2026-09-11): modsearch doctor -> fetch/read_page READY keyless via the local engine (verified on example.com), search/web_search resolves to firecrawl whose keyless route answers 403 for this IP so it needs TAVILY_API_KEY / EXA_API_KEY / firecrawl.apiKey or the agy CLI, x_search needs grok-cli; dsh-vision-toolkit needs nothing -- its free defaults authenticate (GET /v1/models 200 with the literal key) and a real image turn described a screenshot correctly in ~7s. Correction: an earlier note in this session claimed web_search was verified keyless through modsearch; that call was the omp harness tool, not the plugin.",
       "spec": "docs/specs/2026-09-11-plugin-set-expansion-design.md",
@@ -109,9 +92,7 @@
       "id": "feat-010",
       "name": "Restore the settings.yaml symlink",
       "description": "The running config drifted from the documented convention: $DSH_HOME/settings.yaml is a regular file carrying an app-written ui-onboarding key, not the symlink install.sh creates. No repo edit reaches the server while that holds, so this is repaired before any settings work.",
-      "dependencies": [
-        "feat-001"
-      ],
+      "dependencies": ["feat-001"],
       "status": "done",
       "evidence": "./install.sh --no-install (2026-09-12): $DSH_HOME/settings.yaml was a regular 2543 B file (mode 600) carrying an app-written ui-onboarding key, not the symlink install.sh creates, so no repo edit could reach the running server. The script moved it to settings.yaml.bak-20260912-101238 and linked the repo file; `ls -la ~/.dsh/settings.yaml` -> lrwxr-xr-x -> /Users/vovanduc/Code/deepseek-harness-config/settings.yaml. scripts/doctor.sh exit 0, READY (6 ok, 0 warn): dsh 0.1.5-rc.1 on PATH, settings compose, OPENCODE_GO_API_KEY present in ~/.dsh/.env, inference on deepseek-flash -> 200, 6 skills linked; the 5 pinned plugins reported already installed. ./init.sh exit 0. Note: the gate needs write access to $DSH_HOME/profiles — under the default workspace-write sandbox it dies with EPERM on cordis.yml, which is a sandbox limit, not a repo defect."
     },
@@ -119,9 +100,7 @@
       "id": "feat-011",
       "name": "Declare image input on deepseek-flash",
       "description": "settings.yaml declares its models by hand, and a hand-declared model infers no input modality, so every image is refused before sending. Add input: [text, image] to deepseek-flash, and record that the gateway itself accepts images on that model while deepseek-v4-pro does not.",
-      "dependencies": [
-        "feat-010"
-      ],
+      "dependencies": ["feat-010"],
       "status": "done",
       "evidence": "settings.yaml + live verification (2026-09-12): added `input: [text, image]` under the hand-declared deepseek-flash entry. Gateway-level proof first, straight at https://opencode.ai/zen/go/v1 with the OPENCODE_GO_API_KEY bearer and x-opencode-session header: text-only control -> 200 'pong'; the same call carrying a 64x64 PNG (blue square on white, detail=low) -> 200 'A blue square.'. Then in-harness: before the change read_image refused with `model \"deepseek-flash\" does not declare image input`; after the change read_image returned the normalized attachment and the model actually described a 1600x1000 screenshot of the Ecomdy demo — layout, rooftop labels, palette and defects. Image input is live with no restart (adapters re-read on the next request). deepseek-v4-pro stays text-only on purpose: DeepSeek's own model table marks Vision as not supported for it. ./init.sh exit 0 (10 features, 1 in-progress)."
     },
@@ -129,9 +108,7 @@
       "id": "feat-012",
       "name": "Proof-of-concept: reference image to Three.js scene",
       "description": "Build a single-file Three.js isometric office scene under experiments/office-3d-poc/ to prove the Coder Horizon workflow runs on deepseek-flash: read a reference image in-harness, generate one HTML file, then verify with a headless-Chromium screenshot and a console-error check instead of trusting the output.",
-      "dependencies": [
-        "feat-011"
-      ],
+      "dependencies": ["feat-011"],
       "status": "done",
       "evidence": "experiments/office-3d-poc (2026-09-12): index.html (37 KB, one file, no build), vendor/three.min.js (r160 UMD, 669884 B, sha256 170c6789…1d49fa), verify.mjs (CDP over Node 22's built-in fetch+WebSocket, no npm deps), README.md. `node verify.mjs` exits 0: booted yes, 16 seats / 7 trees / 6 zones, 5 console messages and 0 errors (the only non-GL message is three.js's own UMD deprecation warning), 3 screenshots written. It exits non-zero on any console error or a missing window.__poc, so a clean log cannot pass for a working scene. `--eval` mode added after pixels proved ambiguous: it queried the live scene and showed the 20 slat instances present, visible and coloured #b6804e — which located the real defect, a zero-scale InstancedMesh (Matrix4.compose with the default Vector3() scale erases every instance silently, taking the fence pickets, pillars, roof posts, bamboo blinds, balcony flowers and scooters with it). Three render-and-look rounds: first pass had the ground floor reading as a black void, the roof railing as a black picture frame and neighbour blocks filling the frame; corrections were mullion pitch 1.07 m → 2.33 m, parapet rails dark/thick → light/thin, camera standoff 25–47 m → 44–82 m, neighbours 19 m → 33 m, an interior fill light, 0.09 m blinds → 0.2 m. README records five transferable findings, including that the source post's \"single file\" rule is unnecessary (a relative classic <script src> also runs from file:// offline) and that r128 is the wrong pin. Screenshots are gitignored; regenerate with `node verify.mjs`."
     },
@@ -139,9 +116,7 @@
       "id": "feat-013",
       "name": "Make BPMN and mermaid diagram requests work from chat",
       "description": "Asking the harness for a BPMN diagram produced a mermaid flowchart labelled BPMN, because nothing about the working path was visible to a session: experiments/bpmn-viewer/ is a static workspace page and the runbook is workspace-local, so an agent in another workspace sees neither. Add skills/draw-bpmn/ (notation decision, four steps, seven measured traps) so the request resolves from chat alone, and make the viewer's XML inlining a script that refuses stale or DI-less input.",
-      "dependencies": [
-        "feat-012"
-      ],
+      "dependencies": ["feat-012"],
       "status": "done",
       "evidence": "skills/draw-bpmn/ + experiments/bpmn-viewer (2026-09-15). Evidence the gap was real: a web session asked for the same thing produced diagrams/quy-trinh-mua-hang.{mmd,png,svg} — a mermaid flowchart with subgraph lanes labelled BPMN, 45 tool calls, 0 rendered diagrams in chat; naming the viewer and runbook in a follow-up then produced real BPMN, so the path worked but could not fire unprompted. After installing the skill: a fresh headless session given only the request produced xin-nghi-phep.{source.bpmn,bpmn,html,svg,png} plus make-bpmn.mjs with no repo pointer; a fresh web session (127 steps, 14 min) produced travel-expense.{source.bpmn,bpmn,html,svg,png} — 5 tasks, 6 gateways, 12 flows, 20 DI shapes — never reaching for mermaid, and its viewer renders 33 elements with pass:true. The mermaid half was re-verified after the skill existed, not assumed: 'vẽ sơ đồ quy trình mua hàng bằng mermaid' emitted a mermaid fence (2 flowchart SVGs, 'Mermaid diagram rendered') in 15 s, because the skill's description tells the model to prefer mermaid for a quick sketch. Guardrails: inline.mjs refuses XML without bpmndi:BPMNDiagram and retitles the page from the process name (a stale inline had left index.html rendering the previous process; a copy had shipped with the previous diagram's title). ./init.sh exit 0 (12 features, 7 skill bundles); doctor.sh READY; 153 links / 0 broken. Seven traps recorded in knowledge/runbooks/draw-bpmn-workflow.md, including bpmn-auto-layout dropping lanes and collapsing several branches onto one channel.",
       "spec": "knowledge/runbooks/draw-bpmn-workflow.md"
