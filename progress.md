@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-15 14:5x (+07) — real BPMN 2.0 leave-request diagram drawn and verified
-**Active Feature:** none — `feat-010`…`feat-012` closed; the backlog is empty
+**Last Updated:** 2026-09-15 17:0x (+07) — `feat-013` closed: BPMN and mermaid both resolve from chat
+**Active Feature:** none — `feat-010`…`feat-013` all closed; no open features
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
@@ -408,3 +408,23 @@ skill next time.
 
 `diagrams/` (both the mermaid lookalike from the first probe and this real BPMN set) is intentionally
 **left untracked** — it is test output, not this repo's deliverable.
+
+## 2026-09-15 (closing) — both diagram paths verified from chat
+
+- [x] **mermaid, re-verified *after* the skill existed** (the earlier proof predated it, and the
+  skill's description covers "vẽ sơ đồ … quy trình", so the mermaid half was not safe to assume).
+  `dsh --profile headless "vẽ sơ đồ quy trình mua hàng bằng mermaid"` → a mermaid fence, and in the
+  web chat **2 `flowchart` SVGs with "Mermaid diagram rendered" in 15 s**. The model read
+  `draw-bpmn`'s description and correctly declined it — the skill says so explicitly: *"Do NOT use for
+  a quick process sketch; a mermaid `flowchart TD` fence is better there."*
+- [x] **BPMN from chat**, verified twice: a fresh headless session produced
+  `xin-nghi-phep.{source.bpmn,bpmn,html,svg,png}` with no repo pointer, and a fresh web session
+  (127 steps, 14 min) produced `travel-expense.*` — 5 tasks, 6 gateways, 12 flows, 20 DI shapes, never
+  reaching for mermaid, viewer `pass:true` at 33 elements.
+- [x] **`inline.mjs` now retitles the page** from the process `name` (falling back to the process id).
+  Copying the viewer directory is how each diagram gets its page and the title lives outside the
+  inlined XML, so a copy had shipped with the *previous* diagram's name in the tab. Verified both
+  branches: `name` present → `BPMN — Quy trình mua hàng`; stripped → `BPMN — Process_QuyTrinhMuaHang`.
+- [x] **`feat-013` recorded** — this session shipped a user-visible capability (a skill) with no
+  feature entry, while `progress.md` still read "the backlog is empty". Its precedent `feat-012` had
+  one. Feature list is now 13 / 0 in-progress and the header agrees.

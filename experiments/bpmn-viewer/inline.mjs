@@ -22,6 +22,7 @@ const arg = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? proces
 const source = arg('--source', process.argv[2]);
 const page = resolve(HERE, arg('--page', 'index.html'));
 const id = arg('--id', 'bpmnxml');
+const titleOverride = arg('--title', null);
 
 if (!source) {
   console.error('usage: node inline.mjs <laid-out.bpmn> [--page index.html] [--id bpmnxml]');
@@ -54,8 +55,23 @@ const previous = html.slice(bodyStart, end).trim();
 const processId = (xml.match(/<bpmn:process\b[^>]*\bid="([^"]+)"/) || [])[1] || '(unknown)';
 const shapes = (xml.match(/bpmndi:BPMNShape/g) || []).length;
 
-writeFileSync(page, `${before}\n${xml}\n${after}`);
+// Retitle the page from the process it now renders. Copying the viewer directory is how every
+// diagram gets its page, and the title is not part of the inlined XML — so without this, each
+// copy keeps the *previous* diagram's name in the browser tab (which is how a travel-expense
+// page once shipped titled "quy trình mua hàng").
+const processName = (xml.match(/<bpmn:process\b[^>]*\bname="([^"]+)"/) || [])[1]
+  || titleOverride
+  || processId;
+const escaped = processName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const newTitle = `BPMN — ${escaped}`;
+const titleBefore = before.replace(/<title>[\s\S]*?<\/title>/, `<title>${newTitle}</title>`);
+if (titleBefore === before && !/<title>/.test(before)) {
+  throw new Error(`${page}: no <title> to retitle`);
+}
+
+writeFileSync(page, `${titleBefore}\n${xml}\n${after}`);
 
 console.log(`inlined ${source} -> ${page.split('/').pop()}`);
 console.log(`  process ${processId} · ${shapes} shapes · ${xml.length} bytes`);
+console.log(`  title   ${newTitle}`);
 console.log(`  replaced ${previous.length} bytes of previous XML`);
