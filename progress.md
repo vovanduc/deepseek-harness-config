@@ -299,3 +299,36 @@ screenshot-driven work, not just this PoC.
 `./init.sh` needs write access to `$DSH_HOME`; under a `workspace-write` sandbox it stops at the
 compose step with a bare Node `EPERM`. That is the sandbox, not the repo — say which one you hit
 rather than reporting a red gate.
+
+## 2026-09-15 (later) — BPMN inside the web UI: yes, without a plugin
+
+The open question from the section above — "can this be shown *in* the harness?" — is answered, and
+the answer is a workspace page rather than a plugin.
+
+- [x] **`experiments/bpmn-viewer/`** — an 11 KB self-contained page rendering real BPMN 2.0 in the
+  official document preview. 4 packed assets, **333 995 B** total (bpmn-js 18.28 UMD + 3 CSS +
+  the laid-out XML inlined). No plugin, no build step, no network at runtime.
+- [x] **The host's contract, read from the source and then obeyed.** The preview packs **only direct
+  classic `<script src>` and `<link rel=stylesheet>`** into `blob:` URLs inside an
+  opaque-origin `sandbox="allow-scripts"` iframe (4 MB/asset, 32 MB / 64 files). Hence: vendor the
+  viewer and CSS locally, inline the XML (a runtime `fetch` is not in the packed set and the origin is
+  opaque), and avoid CSS `url()` — `bpmn-embedded.css` carries its font as base64.
+- [x] **Two traps that only appear in this host.** `canvas.zoom("fit-viewport")` **throws**
+  `SVGMatrix.scale … non-finite` on a 0×0 container (the mount state) and silently leaves scale 1 on a
+  hidden one — so the page fits declaratively with a `viewBox` pinned to the content bbox plus
+  `preserveAspectRatio`, which makes every later resize automatic. And the page must **measure
+  itself**: a parent cannot read a sandboxed frame's DOM (`SecurityError`, origin `"null"`), and a
+  page global is not reliably visible across automation worlds, so the check is published into
+  `<pre id="fit">`.
+- [x] **Verified `pass: true` twice** — opened directly, and through `preview-sim.mjs`, which
+  reproduces the host's pipeline byte for byte (opaque sandbox, blob-rewritten assets,
+  `document.write` bootstrap): 38/38 elements painted, painted box 1348×195 inside 1365×768, i.e.
+  fitted rather than left at scale 1. The dsh panel itself renders the diagram with its icons
+  (`BPMN 2.0 · 38 elements`).
+- [ ] Honest limit: the headless panel's frame reports `innerWidth 0` while occluded, and the viewer
+  then reports `pass:false, container 0×0` — a true statement about a frame with no layout, not a
+  regression. The fit was therefore proven in the identical sandbox and on a sized page, not observed
+  in the occluded panel.
+- [ ] Still open: previewing a `.bpmn` **from a chat message**. The MCP route stays blocked at the
+  plugin layer, and the upstream BPMN MCP servers are tiny (⭐12 / ⭐9; the widely-cited `bpmn-js-mcp`
+  repo 404s).

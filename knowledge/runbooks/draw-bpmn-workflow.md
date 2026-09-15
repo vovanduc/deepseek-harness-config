@@ -68,6 +68,38 @@ curl -sLo bpmn-font.css https://unpkg.com/bpmn-js@18.28.0/dist/assets/bpmn-font/
 
    Open it from `file://`. `viewer.saveSVG()` returns the SVG if a static image is wanted.
 
+# Show it inside the dsh web UI (no plugin)
+
+Working, self-contained page: **`experiments/bpmn-viewer/`**. The official
+`dsh-client-ui-sidebar-documentpreview` (already installed) renders a local `.html` — it reads the
+file, packs **only direct classic `<script src>` and `<link rel=stylesheet href>`** references, and
+re-writes them to `blob:` URLs inside an **opaque-origin `sandbox="allow-scripts"` iframe**. Limits:
+4 MB per asset, 32 MB / 64 files total.
+
+Three rules follow from that, and each one bit before it was found:
+
+- **Vendor the viewer + CSS, reference them relatively.** A CDN `<script>` is never packed, and an
+  opaque origin cannot fetch what it was not handed.
+- **Inline the BPMN XML** in a `<script type="text/xml">` block. `fetch("x.bpmn")` is not part of the
+  packed set and the frame's origin is opaque.
+- **No CSS `url()`** — the packer does not rewrite them. Use `bpmn-embedded.css` (font base64-inlined)
+  so task/event glyphs appear.
+
+Two traps that only show up in this host:
+
+- `canvas.zoom("fit-viewport")` **throws** (`SVGMatrix.scale … non-finite`) when the container is 0×0,
+  which is the normal state at mount, and silently leaves scale 1 when it is merely hidden. Fit
+  declaratively instead: set `viewBox` from the content bbox + `width/height:100%` +
+  `preserveAspectRatio="xMidYMid meet"`; then every later resize is automatic.
+- The viewer must **measure itself**: a parent cannot read a sandboxed frame's DOM
+  (`SecurityError: Blocked a frame with origin "null"`), and a page global is not reliably readable
+  across automation worlds. Publish the check into the DOM (`<pre id="fit">`) and read that.
+
+```bash
+cd experiments/bpmn-viewer && node preview-sim.mjs   # reproduces the host pipeline offline
+# then read #fit inside the frame: {"pass":true,"elements":38,...}
+```
+
 # Export to an image (simpler than a viewer)
 
 If a file (PNG / SVG / PDF) is what you need, skip the viewer page entirely — `bpmn-to-image` renders
@@ -101,12 +133,15 @@ prefer the viewer when the diagram must be *interactive* (pan/zoom, or a live `.
 
 # Not verified
 
-Whether the diagram can be previewed **inside the dsh web UI** without a client plugin. The MCP route
-is blocked at the plugin layer (`dsh-mcp-adapter@0.6.3` fails the pre-flight on
-`@deepseek-ai/dsh-client-runtime`; `dsh-mcp-proxy@0.1.0` / `dsh-mcp-lens@0.1.0-rc.9` pass but the
-upstream BPMN MCP servers are tiny — `dattmavis/BPMN-MCP` ⭐12, `oisee/mcp-bpmn` ⭐9; the
-`bpmn-js-mcp` repo the search engines cite **404s**), and no official `@deepseek-ai` MCP package is
-installed here. Everything above runs outside the UI, driven by shell and files.
+Whether BPMN can be **previewed from a chat message** (an agent-produced `.bpmn` rendered inline
+rather than opened from the Files panel). The MCP route is blocked at the plugin layer
+(`dsh-mcp-adapter@0.6.3` fails the pre-flight on `@deepseek-ai/dsh-client-runtime`;
+`dsh-mcp-proxy@0.1.0` / `dsh-mcp-lens@0.1.0-rc.9` pass but the upstream BPMN MCP servers are tiny —
+`dattmavis/BPMN-MCP` ⭐12, `oisee/mcp-bpmn` ⭐9; the `bpmn-js-mcp` repo the search engines cite
+**404s**), and no official `@deepseek-ai` MCP package is installed here.
+
+Everything above runs outside the chat: a workspace `.html` opened in the document preview, or a file
+exported by CLI.
 
 # Related
 
