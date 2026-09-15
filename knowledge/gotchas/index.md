@@ -15,3 +15,4 @@ title: Gotchas — non-obvious traps
 - [dsh-diagram breaks the web boot on the pinned dsh](dsh-diagram-incompatible-with-pinned-dsh.md) — its client needs a `conversationEvents` service 0.1.5-rc.1 does not have.
 - [The npm name `dsh-mermaid` belongs to MrmoLabs](dsh-mermaid-npm-name-collision.md) — the repo a plugin list links may not be the npm publisher.
 - [Popularity is not fitness](plugin-fit-vs-popularity.md) — the top-starred plugins in two categories are refused on dsh 0.1.5-rc.1, and one publishes under a different npm name.
+- [No ERD or BPMN plugin exists](diagram-plugins-er-and-flow.md) — `dsh-mermaid` already draws both (mermaid 11.17), and every fancier renderer is blocked by the missing client runtime.
