@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-15 17:0x (+07) — `feat-013` closed: BPMN and mermaid both resolve from chat
-**Active Feature:** none — `feat-010`…`feat-013` all closed; no open features
+**Last Updated:** 2026-09-15 22:1x (+07) — `feat-014` closed: Devin SWE-2 routed through omp's auth-gateway
+**Active Feature:** none — `feat-010`…`feat-014` all closed; no open features
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
@@ -24,6 +24,7 @@
 - [x] `feat-010`: restored the `$DSH_HOME/settings.yaml` symlink — it had drifted to a regular file, so **no repo edit was reaching the server** while every check still passed.
 - [x] `feat-011`: `input: [text, image]` on `deepseek-flash`, proven at the gateway first, then in-harness: `read_image` now returns real images.
 - [x] `feat-012`: `experiments/office-3d-poc/` — a one-file Three.js office with a headless-Chromium verification loop, built and corrected over three render-and-look rounds.
+- [x] `feat-014`: `omp-gateway` route — Devin SWE-2 (no public API) reaches dsh through omp's local auth-gateway; `scripts/omp-gateway.sh` brings broker + gateway up in the order the boot-time catalog needs. Measured at the gateway, then confirmed in the composer.
 - [x] `./init.sh` passes; harness audit 100/100; knowledge links resolve.
 
 ### What's In Progress
@@ -428,3 +429,43 @@ skill next time.
 - [x] **`feat-013` recorded** — this session shipped a user-visible capability (a skill) with no
   feature entry, while `progress.md` still read "the backlog is empty". Its precedent `feat-012` had
   one. Feature list is now 13 / 0 in-progress and the header agrees.
+
+## 2026-09-15 (evening) — Devin SWE-2 into dsh, without a proxy
+
+Question: the omp harness had just moved its free lanes onto Devin SWE-2 (TokenRouter's free GLM
+quota ran out); can dsh use the same model? SWE-2 has no public API — Cognition runs it only
+inside Devin over Connect-RPC — and the community bridges (`cognition-claude-proxy`, a Python
+shim behind CLIProxyAPI) are reverse-engineered, 0-star, and sanitize the system prompt.
+
+- [x] **The bridge already existed.** omp ships `auth-broker` (credential vault) + `auth-gateway`
+  (OpenAI Chat Completions / Anthropic Messages / Responses front over its own provider logic).
+  Its `devin` provider is first-class. So dsh gets an ordinary `openai-completions` route at
+  `http://127.0.0.1:4000/v1` with model `devin/swe-2` — nothing to install in dsh, no plugin.
+- [x] **Measured at that endpoint (the exact wire dsh uses):** plain → `GW OK` in 7.4 s with
+  `usage`; `stream: true` + `tools` → streamed `tool_calls` deltas with server-minted ids;
+  `system` + `reasoning_effort` `medium`/`high`/`max` → answered, `reasoning_content` returned;
+  no bearer → `{"error":"unauthorized"}`.
+- [x] **Two traps, both written down** (`docs/models.md`, `knowledge/systems/omp-gateway-route.md`):
+  the gateway builds `/v1/models` at boot from providers that already hold a credential, so a
+  gateway started before `auth-broker migrate --include-env` uploads the Devin key answers
+  `Unknown model: devin/swe-2` until restarted; and `max_tokens: 20` is eaten by reasoning
+  (`finish_reason: length`, `content: null`). `scripts/omp-gateway.sh start|stop|status` encodes
+  the order; `start` is idempotent (second run leaves 2 processes), `status` posts one real
+  completion with the bearer.
+- [x] `settings.yaml`: `omp-gateway` route added **after** `opencode-go`, so `doctor.sh`'s
+  first-provider probe still targets `deepseek-flash` and the default model is unchanged.
+  `.env.example` documents `OMP_GATEWAY_API_KEY` (the gateway's own token; `start` prints it).
+- [ ] **Not exercised inside dsh.** `dsh` is not installed on this machine right now (`~/.dsh`
+  absent, no global package), so neither `doctor.sh` nor the composer picker ran. First thing on
+  a machine that has it: `./scripts/omp-gateway.sh status`, then one composer turn on
+  *SWE-2 (Devin, via omp)*.
+- [x] `./init.sh` → exit 0 (14 features, 0 in-progress; settings parse; default resolves).
+
+Decision: **reuse omp's gateway, do not write a proxy or a dsh plugin.** A plugin would have
+to reimplement Connect-RPC against an undocumented backend; the gateway is maintained upstream
+and already carries the Devin quirks. Trade-off: two loopback processes and a dependency on
+`omp >= 18.2` being installed — acceptable, it is the other harness on every machine here.
+- [x] **Later the same evening — proven inside dsh.** `./install.sh` reinstalled `dsh 0.1.5-rc.1`
+  (the machine had none), keys seeded into `~/.dsh/.env`, `doctor.sh` READY (6 ok), `dsh web`
+  booted clean (4 client bundles served, 0 errors), and a composer session on
+  *SWE-2 (Devin, via omp)* worked. Setup on another machine: `knowledge/runbooks/new-machine-setup.md`.

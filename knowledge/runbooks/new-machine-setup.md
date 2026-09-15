@@ -16,6 +16,17 @@ $EDITOR ~/.dsh/.env    # OPENCODE_GO_API_KEY=<real key>
 ./scripts/doctor.sh    # expect: status: READY  (add --json for one machine-readable object)
 ```
 
+Optional — Devin SWE-2 as a second route (see [../systems/omp-gateway-route.md](../systems/omp-gateway-route.md)):
+
+```bash
+brew install omp && devin auth login        # omp >= 18.2; Devin Pro account
+./scripts/omp-gateway.sh start              # broker + Devin key upload + gateway on loopback
+echo 'OMP_GATEWAY_API_KEY=<the line it printed>' >> ~/.dsh/.env
+./scripts/omp-gateway.sh status             # expect: swe-2 via gateway: OK
+```
+
+Both processes are `nohup`, so re-run `start` after a reboot. The UI then lists *SWE-2 (Devin, via omp)*.
+
 `install.sh --no-install` skips the global npm step. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`. It runs `scripts/check-node.sh` before creating anything: a Node below 20 stops it there, and a major that differs from `.nvmrc` only warns.
 
 # Expected

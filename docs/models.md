@@ -61,6 +61,54 @@ curl -s https://opencode.ai/zen/go/v1/models -H "Authorization: Bearer $OPENCODE
   | python3 -c 'import json,sys; print("\n".join(m["id"] for m in json.load(sys.stdin)["data"]))'
 ```
 
+## The second route: `omp-gateway` (Devin SWE-2)
+
+Cognition's SWE-2 has **no public API** — it only runs inside Devin's harness, over Connect-RPC
+to `server.codeium.com`. What does speak that protocol is omp's built-in `devin` provider, and
+omp ships an `auth-gateway` that re-exposes every credential it holds as a local
+OpenAI-compatible endpoint. That is the whole bridge: no community proxy, no plugin.
+
+```
+dsh ──openai-completions──▶ omp auth-gateway (127.0.0.1:4000) ──Connect-RPC──▶ Devin backend (SWE-2)
+                                    │ bearer
+                            omp auth-broker (127.0.0.1:8765) holds the Devin session token
+```
+
+```bash
+brew install omp                 # once; needs omp >= 18.2
+devin auth login                 # once; writes ~/.local/share/devin/credentials.toml
+./scripts/omp-gateway.sh start   # broker → uploads the Devin key → gateway; prints the .env line
+echo 'OMP_GATEWAY_API_KEY=<printed value>' >> ~/.dsh/.env
+./scripts/omp-gateway.sh status  # "swe-2 via gateway: OK"
+```
+
+Then pick **SWE-2 (Devin, via omp)** in the composer, or set `agent-default-model` to
+`omp-gateway` / `devin/swe-2`.
+
+What was measured at the gateway on 2026-09-15 (the exact wire dsh uses):
+
+| Request | Result |
+|---|---|
+| plain completion | `GW OK`, 7.4 s round trip, `usage` populated |
+| `stream: true` + `tools` | streamed `tool_calls` deltas with server-minted ids, `finish_reason` set |
+| `system` role + `reasoning_effort: high/medium/max` | answered; `reasoning_content` returned beside `content` |
+| no bearer | `{"error":"unauthorized"}` — the token in `.env` is required |
+
+Two traps:
+
+- **Start order is load-bearing.** The gateway computes its model catalog at boot from the
+  providers that have a credential *at that moment*; a gateway started before the Devin key was
+  uploaded answers `Unknown model: devin/swe-2` until restarted. The script does it in order.
+- **`max_tokens` is shared with reasoning.** A 20-token cap was eaten by `reasoning_content`
+  and came back `finish_reason: length` with `content: null`. The route declares 131072; do not
+  probe with tiny caps.
+
+Quota: on a Devin Pro plan `swe-2` (any effort) is quota-free; other Devin ids (`glm-5-2`
+variants, Claude/GPT through Devin) burn the plan's weekly quota and fail hard with
+`failed_precondition: Your weekly usage quota has been exhausted` when it is gone — so only
+`devin/swe-2` is declared here. Cognition announced SWE-2 "free for the next month" on
+2026-09-10; re-check `devin models list` for `[Free]` around 2026-10-10.
+
 ## Adding another provider
 
 ```yaml

@@ -45,6 +45,30 @@ llm-pi-ai:
           name: GLM 5.3
           contextWindow: 200000
           maxTokens: 32768
+    # Devin SWE-2 (Cognition). No public API exists — the model only speaks Devin's
+    # Connect-RPC — so omp's auth-gateway re-exposes omp's built-in `devin` provider as a
+    # local OpenAI-compatible endpoint. Bring it up with ./scripts/omp-gateway.sh start
+    # (broker + gateway on loopback), which prints the OMP_GATEWAY_API_KEY line for
+    # ~/.dsh/.env. Quota-free on a Devin Pro plan for `swe-2`; see docs/models.md.
+    omp-gateway:
+      displayName: omp auth-gateway (Devin)
+      api: openai-completions
+      baseURL: http://127.0.0.1:4000/v1
+      apiKeyEnv: OMP_GATEWAY_API_KEY
+      compat:
+        supportsDeveloperRole: false
+        maxTokensField: max_tokens
+      models:
+        - id: devin/swe-2
+          name: SWE-2 (Devin, via omp)
+          contextWindow: 262144
+          maxTokens: 131072
+          # Verified 2026-09-15: the gateway maps reasoning_effort onto Devin's
+          # medium/high/max ladder and returns reasoning_content beside the answer.
+          reasoningEfforts:
+            medium: medium
+            high: high
+            max: max
 
 # ─── Defaults for new sessions ───────────────────────────────────────────────
 # Read when a session is created; running sessions keep what they started with.

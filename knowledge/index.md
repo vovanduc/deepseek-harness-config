@@ -15,7 +15,7 @@ Durable knowledge about this repo. Three layers, kept apart:
 ## Start here
 
 - New machine → [runbooks/new-machine-setup.md](runbooks/new-machine-setup.md)
-- Change `settings.yaml` → [systems/opencode-go-route.md](systems/opencode-go-route.md) · [systems/credential-resolution.md](systems/credential-resolution.md)
+- Change `settings.yaml` → [systems/opencode-go-route.md](systems/opencode-go-route.md) · [systems/omp-gateway-route.md](systems/omp-gateway-route.md) · [systems/credential-resolution.md](systems/credential-resolution.md)
 - Add a model or provider → [runbooks/add-model-or-provider.md](runbooks/add-model-or-provider.md)
 - Install or bump a dsh plugin → [runbooks/dsh-plugins.md](runbooks/dsh-plugins.md)
 - Verify before claiming done → [runbooks/verify-change.md](runbooks/verify-change.md)
