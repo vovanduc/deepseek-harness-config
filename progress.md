@@ -325,10 +325,17 @@ the answer is a workspace page rather than a plugin.
   `document.write` bootstrap): 38/38 elements painted, painted box 1348×195 inside 1365×768, i.e.
   fitted rather than left at scale 1. The dsh panel itself renders the diagram with its icons
   (`BPMN 2.0 · 38 elements`).
-- [ ] Honest limit: the headless panel's frame reports `innerWidth 0` while occluded, and the viewer
-  then reports `pass:false, container 0×0` — a true statement about a frame with no layout, not a
-  regression. The fit was therefore proven in the identical sandbox and on a sized page, not observed
-  in the occluded panel.
+- [x] **Closing the loop on the real UI** (the simulator was not enough): with
+  `experiments/bpmn-viewer/index.html` open from the Files panel, the frame is a
+  `blob:http://127.0.0.1:4319/…` URL with `sandbox="allow-scripts"` and its own `#fit` reports
+  **`pass:true`** in both the narrow panel (container 614×692, painted 606×88) and fullscreen
+  (1365×692, 1348×195) — the viewBox fit refits by itself, and the packed `bpmn-embedded.css` font
+  resolves inside the sandbox (user-task figures, service-task cogs, gateway ×, start/end circles).
+- [x] **Measurement gotcha worth keeping:** read `#fit` in the *same* automation cell that forces a
+  render. An idle tab is frozen between operations, and a frozen frame reports `clientWidth/Height 0`
+  with rAF paused — so a later read republishes `container {w:0,h:0}`, a freeze artifact that looks
+  exactly like a fit failure. An earlier read of mine said `pass:false` for that reason, not for a
+  real reason.
 - [ ] Still open: previewing a `.bpmn` **from a chat message**. The MCP route stays blocked at the
   plugin layer, and the upstream BPMN MCP servers are tiny (⭐12 / ⭐9; the widely-cited `bpmn-js-mcp`
   repo 404s).

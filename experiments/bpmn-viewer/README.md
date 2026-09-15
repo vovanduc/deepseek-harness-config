@@ -95,10 +95,29 @@ automation worlds — the DOM copy is the one to trust. A pass looks like:
 `pass` requires every element painted, the painted box inside the container, and the box using at
 least half of the panel — a diagram left at scale 1 fails the last condition.
 
-Verified 2026-09-15: **`pass: true`** both opened directly and through `preview-sim.mjs`'s sandbox.
-In the dsh UI the panel renders the diagram with its icons
-(`BPMN 2.0 · 38 elements`); the headless panel's frame reports `innerWidth 0` while occluded, and the
-viewer honestly reports `pass:false, container 0×0` there rather than claiming a fit it cannot see.
+Verified 2026-09-15, three ways:
+
+1. **Opened directly** (`file://`) on a sized page — `pass: true`.
+2. **Through `preview-sim.mjs`'s sandbox** — the host pipeline reproduced byte for byte
+   (opaque-origin `allow-scripts` frame, blob-rewritten assets, `document.write` bootstrap) —
+   `pass: true`.
+3. **In the real dsh UI**, the file opened from the Files panel. The frame is a
+   `blob:http://127.0.0.1:4319/…` URL with `sandbox="allow-scripts"`, and it reports:
+
+   ```json
+   panel:      {"pass":true,"painted":38,"container":{"w":614,"h":692},"paintedBox":{"w":606,"h":88}}
+   fullscreen: {"pass":true,"painted":38,"container":{"w":1365,"h":692},"paintedBox":{"w":1348,"h":195}}
+   ```
+
+   `pass: true` in both the narrow panel and fullscreen — the diagram refits on its own, which is the
+   property the viewBox approach was chosen for. The rendered diagram shows the correct BPMN glyphs
+   (user-task figures, service-task cogs, gateway ×, start/end circles), so the packed
+   `bpmn-embedded.css` font resolves inside the sandbox too.
+
+**Measurement note.** Read `#fit` in the *same* automation cell that forces a render. An idle tab is
+frozen between operations, and a frozen frame reports `clientWidth/clientHeight 0` with `rAF` paused,
+so a later read republishes `container {w:0,h:0}` — a freeze artifact that looks exactly like a fit
+failure. Pair the resize with a screenshot or a same-cell read to force the frame's lifecycle.
 
 ## Regenerating
 
