@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>BPMN — quy tr&#236;nh duy&#7879;t chi ph&#237; c&#244;ng t&#225;c</title>
+<!--
+  bpmn-js viewer: offline, no build step, no dsh plugin.
+
+  Opens inside the dsh web document preview, which renders local HTML in a
+  script-enabled opaque iframe and pre-packs relative assets (<=4 MB each,
+  <=32 MB / <=64 files total) — so vendor/* and the inline XML below all arrive.
+
+  The XML is INLINED on purpose: a runtime fetch() of a relative .bpmn is not part
+  of the packed asset set, and the iframe's origin is opaque.
+
+  The embedded XML is the output of bpmn-auto-layout (it carries bpmndi:BPMNDiagram).
+  bpmn-js refuses to render without DI — see knowledge/runbooks/draw-bpmn-workflow.md.
+  Regenerate: edit purchase.bpmn, run it through bpmn-auto-layout, re-inline.
+-->
+<link rel="stylesheet" href="vendor/diagram-js.css">
+<link rel="stylesheet" href="vendor/bpmn-js.css">
+<link rel="stylesheet" href="vendor/bpmn-embedded.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; }
+  #canvas { width: 100%; height: 100vh; }
+  #status { position: fixed; left: 6px; bottom: 4px; font: 11px/1.4 ui-monospace, monospace; color: #777; }
+</style>
+</head>
+<body>
+<div id="canvas"></div>
+<div id="status">loading&#8230;</div>
+<!-- machine-readable result of the viewer's own fit check; see selfCheck() below -->
+<pre id="fit" hidden></pre>
+
+<script type="text/xml" id="bpmnxml">
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_DuyetChiPhiCongTac" targetNamespace="http://bpmn.io/schema/bpmn" exporter="dsh" exporterVersion="1.0">
+  <bpmn:process id="Process_DuyetChiPhiCongTac" name="Quy trình duyệt chi phí công tác" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_DeNghi" name="Nhân viên phát sinh chi phí công tác">
+      <bpmn:outgoing>Flow_01</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_NopDeNghi" name="Nhân viên nộp đề nghị hoàn ứng">
+      <bpmn:incoming>Flow_01</bpmn:incoming>
+      <bpmn:incoming>Flow_04b</bpmn:incoming>
+      <bpmn:outgoing>Flow_02</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_QuanLyDuyet" name="Quản lý duyệt đề nghị">
+      <bpmn:incoming>Flow_02</bpmn:incoming>
+      <bpmn:outgoing>Flow_03</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_QuanLyDongY" name="Quản lý đồng ý?">
+      <bpmn:incoming>Flow_03</bpmn:incoming>
+      <bpmn:outgoing>Flow_04</bpmn:outgoing>
+      <bpmn:outgoing>Flow_05</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_ChinhSuaDeNghi" name="Nhân viên chỉnh sửa, bổ sung đề nghị">
+      <bpmn:incoming>Flow_04</bpmn:incoming>
+      <bpmn:outgoing>Flow_04b</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_Tren10Trieu" name="Tổng chi phí trên 10 triệu?">
+      <bpmn:incoming>Flow_05</bpmn:incoming>
+      <bpmn:outgoing>Flow_06</bpmn:outgoing>
+      <bpmn:outgoing>Flow_09</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_KeToanDuyet" name="Kế toán duyệt đề nghị">
+      <bpmn:incoming>Flow_06</bpmn:incoming>
+      <bpmn:outgoing>Flow_07</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_KeToanDongY" name="Kế toán đồng ý?">
+      <bpmn:incoming>Flow_07</bpmn:incoming>
+      <bpmn:outgoing>Flow_08</bpmn:outgoing>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_HoanUng" name="Kế toán thực hiện hoàn ứng cho nhân viên">
+      <bpmn:incoming>Flow_09</bpmn:incoming>
+      <bpmn:incoming>Flow_08</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_HoanUngXong" name="Đã hoàn ứng">
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_01" sourceRef="StartEvent_DeNghi" targetRef="Task_NopDeNghi" />
+    <bpmn:sequenceFlow id="Flow_02" sourceRef="Task_NopDeNghi" targetRef="Task_QuanLyDuyet" />
+    <bpmn:sequenceFlow id="Flow_03" sourceRef="Task_QuanLyDuyet" targetRef="Gateway_QuanLyDongY" />
+    <bpmn:sequenceFlow id="Flow_04" name="Không" sourceRef="Gateway_QuanLyDongY" targetRef="Task_ChinhSuaDeNghi" />
+    <bpmn:sequenceFlow id="Flow_04b" sourceRef="Task_ChinhSuaDeNghi" targetRef="Task_QuanLyDuyet" />
+    <bpmn:sequenceFlow id="Flow_05" name="Có" sourceRef="Gateway_QuanLyDongY" targetRef="Gateway_Tren10Trieu" />
+    <bpmn:sequenceFlow id="Flow_09" name="Không" sourceRef="Gateway_Tren10Trieu" targetRef="Task_HoanUng" />
+    <bpmn:sequenceFlow id="Flow_06" name="Có" sourceRef="Gateway_Tren10Trieu" targetRef="Task_KeToanDuyet" />
+    <bpmn:sequenceFlow id="Flow_07" sourceRef="Task_KeToanDuyet" targetRef="Gateway_KeToanDongY" />
+    <bpmn:sequenceFlow id="Flow_08" name="Có" sourceRef="Gateway_KeToanDongY" targetRef="Task_HoanUng" />
+    <bpmn:sequenceFlow id="Flow_10" name="Không" sourceRef="Gateway_KeToanDongY" targetRef="Task_ChinhSuaDeNghi" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_HoanUng" targetRef="EndEvent_HoanUngXong" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_DuyetChiPhiCongTac">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_DuyetChiPhiCongTac" bpmnElement="Process_DuyetChiPhiCongTac">
+      <bpmndi:BPMNShape id="StartEvent_DeNghi_di" bpmnElement="StartEvent_DeNghi">
+        <dc:Bounds x="45" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3" y="304" width="120" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NopDeNghi_di" bpmnElement="Task_NopDeNghi">
+        <dc:Bounds x="116" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_QuanLyDuyet_di" bpmnElement="Task_QuanLyDuyet">
+        <dc:Bounds x="251" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_QuanLyDongY_di" bpmnElement="Gateway_QuanLyDongY" isMarkerVisible="true">
+        <dc:Bounds x="396" y="255" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="454" y="271" width="110" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_KeToanDuyet_di" bpmnElement="Task_KeToanDuyet">
+        <dc:Bounds x="686" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_KeToanDongY_di" bpmnElement="Gateway_KeToanDongY" isMarkerVisible="true">
+        <dc:Bounds x="821" y="115" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HoanUng_di" bpmnElement="Task_HoanUng">
+        <dc:Bounds x="886" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_HoanUngXong_di" bpmnElement="EndEvent_HoanUngXong">
+        <dc:Bounds x="1021" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="979" y="304" width="120" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Tren10Trieu_di" bpmnElement="Gateway_Tren10Trieu" isMarkerVisible="true">
+        <dc:Bounds x="391" y="400" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="342" y="468" width="110" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ChinhSuaDeNghi_di" bpmnElement="Task_ChinhSuaDeNghi">
+        <dc:Bounds x="226" y="500" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_01_di" bpmnElement="Flow_01">
+        <di:waypoint x="81" y="280" />
+        <di:waypoint x="116" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02_di" bpmnElement="Flow_02">
+        <di:waypoint x="216" y="280" />
+        <di:waypoint x="251" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_03_di" bpmnElement="Flow_03">
+        <di:waypoint x="351" y="280" />
+        <di:waypoint x="396" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04_di" bpmnElement="Flow_04">
+        <di:waypoint x="421" y="305" />
+        <di:waypoint x="421" y="590" />
+        <di:waypoint x="300" y="590" />
+        <di:waypoint x="300" y="580" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="438.5" y="431" width="43" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04b_di" bpmnElement="Flow_04b">
+        <di:waypoint x="276" y="500" />
+        <di:waypoint x="276" y="330" />
+        <di:waypoint x="301" y="330" />
+        <di:waypoint x="301" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05_di" bpmnElement="Flow_05">
+        <di:waypoint x="421" y="305" />
+        <di:waypoint x="421" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="459.5" y="353" width="17" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06_di" bpmnElement="Flow_06">
+        <di:waypoint x="441" y="415" />
+        <di:waypoint x="736" y="415" />
+        <di:waypoint x="736" y="180" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="551.5" y="394" width="17" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07_di" bpmnElement="Flow_07">
+        <di:waypoint x="786" y="140" />
+        <di:waypoint x="821" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_08_di" bpmnElement="Flow_08">
+        <di:waypoint x="846" y="165" />
+        <di:waypoint x="846" y="200" />
+        <di:waypoint x="936" y="200" />
+        <di:waypoint x="936" y="240" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="937.5" y="179" width="17" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09_di" bpmnElement="Flow_09">
+        <di:waypoint x="441" y="435" />
+        <di:waypoint x="886" y="435" />
+        <di:waypoint x="886" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="598.5" y="398" width="43" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="846" y="115" />
+        <di:waypoint x="846" y="84" />
+        <di:waypoint x="960" y="84" />
+        <di:waypoint x="960" y="680" />
+        <di:waypoint x="276" y="680" />
+        <di:waypoint x="276" y="580" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="678.5" y="63" width="43" height="18" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="986" y="280" />
+        <di:waypoint x="1021" y="280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+</script>
+
+<script src="vendor/bpmn-navigated-viewer.production.min.js"></script>
+<script>
+(function () {
+  var status = document.getElementById("status");
+  var say = function (text) { if (status) status.textContent = text; };
+
+  /**
+   * Fit the diagram to whatever box the host gives us.
+   *
+   * `canvas.zoom("fit-viewport")` is not usable here: the document preview mounts the
+   * iframe before the panel is laid out (the frame reports innerWidth 0 while hidden),
+   * and a fit attempted in that state silently leaves the diagram at scale 1 — it
+   * overflows a narrow panel and sits in the corner of a wide one, with no error.
+   *
+   * So size it declaratively instead: pin a viewBox to the rendered content's bbox and
+   * let CSS scale the SVG. Width/height 100% + viewBox means the browser re-fits on
+   * every container resize on its own — no ResizeObserver, no retry loop, and it works
+   * whether the panel is hidden, narrow, or fullscreen. diagram-js pan/zoom still work,
+   * applied on top of this base scale.
+   */
+  function fitToContainer(viewer) {
+    var canvas = viewer.get("canvas");
+    var el = canvas.getContainer();
+    var svg = el.querySelector("svg");
+    if (!svg) { return false; }
+    // bbox of everything drawn, in the SVG's own user units
+    var content = svg.querySelector("g.viewport > g") || svg;
+    var box;
+    try { box = content.getBBox(); } catch (e) { return false; }
+    if (!box || !isFinite(box.width) || !isFinite(box.height) || box.width <= 0 || box.height <= 0) { return false; }
+
+    var pad = 10; // a little breathing room so edge labels are not clipped
+    svg.setAttribute("viewBox", [box.x - pad, box.y - pad, box.width + pad * 2, box.height + pad * 2].join(" "));
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+    return true;
+  }
+
+  /**
+   * The preview mounts the iframe before the panel is laid out — in a hidden tab the
+   * container is 0x0 and the SVG has no measurable content. So: fit whenever the
+   * container has a real box, and re-publish the check each time, so the reported
+   * result is honest both while hidden ("not fitted yet") and once shown.
+   *
+   * The observer stays connected: the viewBox makes resizes automatic, but re-fitting
+   * is what keeps the published check truthful after the panel becomes visible.
+   */
+  function keepFitted(viewer) {
+    var el = viewer.get("canvas").getContainer();
+
+    var sync = function () {
+      if (el.clientWidth > 0 && el.clientHeight > 0) { fitToContainer(viewer); }
+      publish(selfCheck(viewer));
+    };
+
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(sync).observe(el);
+    }
+    var tries = 120;
+    (function tick() {
+      sync();
+      if (tries-- <= 0) { return; }
+      requestAnimationFrame(tick);
+    })();
+  }
+
+  function publish(result) {
+    window.__fit = result;
+    var out = document.getElementById("fit");
+    if (out) { out.textContent = JSON.stringify(result); }
+  }
+
+  /**
+   * Self-check, published on `window.__fit` **and** in the DOM (`<pre id="fit">`).
+   *
+   * It has to live inside this document: the host renders it in a sandboxed iframe, so a
+   * parent page cannot read this DOM (`SecurityError: Blocked a frame with origin "null"`).
+   * The DOM copy is the one a checker should trust — reading a page global from a
+   * sandboxed frame is not reliable across automation worlds, while reading an element is.
+   */
+  function selfCheck(viewer) {
+    var canvas = viewer.get("canvas");
+    var el = canvas.getContainer();
+    var svg = el.querySelector("svg");
+    if (!svg) { return { pass: false, reason: "no svg" }; }
+    var els = [].slice.call(svg.querySelectorAll(".djs-element"));
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, painted = 0;
+    els.forEach(function (e) {
+      var b = e.getBoundingClientRect();
+      if (!b.width && !b.height) { return; }
+      painted++;
+      minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+    });
+    var cw = el.clientWidth, ch = el.clientHeight;
+    var inside = painted > 0 && minX >= -1 && minY >= -1 && maxX <= cw + 1 && maxY <= ch + 1;
+    // a diagram left at scale 1 huddles in one corner: require it to actually use the box
+    var fillsW = (maxX - minX) >= cw * 0.5 || (maxY - minY) >= ch * 0.5;
+    return {
+      pass: inside && fillsW,
+      elements: els.length, painted: painted,
+      viewBox: svg.getAttribute("viewBox"),
+      container: { w: cw, h: ch },
+      paintedBox: { x: Math.round(minX), y: Math.round(minY), w: Math.round(maxX - minX), h: Math.round(maxY - minY) },
+      inside: inside, fills: fillsW,
+      status: status ? status.textContent : null,
+    };
+  }
+
+  try {
+    if (typeof BpmnJS !== "function") { say("ERROR: BpmnJS global missing"); return; }
+    var xml = document.getElementById("bpmnxml").textContent;
+    var viewer = new BpmnJS({ container: "#canvas" });
+    window.__viewer = viewer;
+    viewer.importXML(xml)
+      .then(function () {
+        say("BPMN 2.0 \u00b7 " + document.querySelectorAll("#canvas svg .djs-element").length + " elements");
+        keepFitted(viewer);
+      })
+      .catch(function (e) { say("ERROR: " + (e && e.message || e)); });
+  } catch (e) {
+    say("THROWN: " + (e && e.message || e));
+    window.__fit = { pass: false, reason: String(e && e.message || e) };
+  }
+})();
+</script>
+</body>
+</html>

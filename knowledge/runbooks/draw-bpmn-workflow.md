@@ -102,6 +102,19 @@ Two traps that only show up in this host:
   layout grid never places it: the DI comes back with the tasks laid out and **0 lanes**, no error.
   Asked for a swimlane diagram, either model the roles as a label prefix (`[GĐ] Phê duyệt`) or add
   the lane DI by hand — and say which. Never describe the result as swimlanes when they are absent.
+- **bpmn-js places a gateway's name itself, and an unplaced name lands on the shape.**
+  A `bpmn:exclusiveGateway` with no `bpmndi:BPMNLabel` gets its name centred on the diamond, and
+  a name it does place renders *below* the shape whatever bounds you supply. Measured on a
+  10-node travel-expense process: the decision names landed on the branch labels and on a task's
+  inline text. Fix: give every gateway explicit `BPMNLabel` bounds — the two decision gateways
+  carry their names **beside** the diamond (right) or below it with a horizontal nudge.
+  Task and event names, by contrast, ARE honoured, so a task's text can be positioned off-centre.
+- **Estimate nothing about label boxes; measure them.** Widths guessed from character counts
+  ("Không" = 5 x 8.5 px) passed checks and still rendered on top of gateway names, because bpmn-js
+  renders a gateway name 80-98 px wide, not the 110 px assumed. `experiments/bpmn-viewer/measure-labels.mjs`
+  boots the vendored bpmn-js headlessly, reads every painted `<text>` box out of the DOM, and
+  reports overlaps — that is what closed this out. A gateway also needs a *diamond* test, not a
+  bounding-box test: a label clear of the box can still sit on the painted diamond.
 - **Short gateway branches collide their edge labels with the gateway label.** Auto-layout places the
   label at the flow's midpoint; on a short branch that lands on the target diamond. Lengthen the flow
   or shorten the label — this is a layout-engine limitation to note, not a bug to chase.

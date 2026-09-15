@@ -20,6 +20,9 @@ the diagram must be *BPMN*: openable in Camunda Modeler / bpmn.io, or consumed b
 | `vendor/bpmn-navigated-viewer.production.min.js` | bpmn-js 18.28.0 UMD navigated-viewer, 194 514 B |
 | `vendor/{diagram-js,bpmn-js,bpmn-embedded}.css` | 27 562 / 4 159 / 96 188 B — styles + icon font |
 | `purchase.bpmn`, `purchase-request.*` | two worked examples |
+| `travel-expense.*` | worked example: duyệt chi phí công tác (3 branches, 2 reject loops) |
+| `make-travel-expense.mjs` | hand-placed DI for that process, with validators |
+| `measure-labels.mjs` | renders a `.bpmn` headlessly and reports **real** painted text-box overlaps |
 
 Total shipped to the page: **4 assets, 345 144 B** — well inside the preview's limits (4 MB per
 asset, 32 MB / 64 files total).
