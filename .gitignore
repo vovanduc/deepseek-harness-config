@@ -18,3 +18,7 @@ logs/
 # Renders from the 3D proof of concept. Regenerate with
 #   node experiments/office-3d-poc/verify.mjs
 experiments/office-3d-poc/shot-*.png
+
+# gstack tool state — holds terminal-internal-token, i.e. a credential. It ships its
+# own `.gitignore` containing `*`, so this line is defence in depth, not the only guard.
+.gstack/

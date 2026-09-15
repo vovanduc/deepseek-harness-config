@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_QuyTrinhMuaHang" targetNamespace="http://bpmn.io/schema/bpmn" exporter="dsh" exporterVersion="1.0">
+  <bpmn:process id="Process_QuyTrinhMuaHang" name="Quy trình mua hàng" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_NhuCau" name="Nhu cầu mua hàng">
+      <bpmn:outgoing>Flow_01</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_TaoYeuCau" name="Nhân viên tạo yêu cầu mua hàng">
+      <bpmn:incoming>Flow_01</bpmn:incoming>
+      <bpmn:incoming>Flow_04b</bpmn:incoming>
+      <bpmn:outgoing>Flow_02</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_KiemTraHopLe" name="Kiểm tra tính hợp lệ">
+      <bpmn:incoming>Flow_02</bpmn:incoming>
+      <bpmn:outgoing>Flow_03</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_HopLe" name="Hợp lệ?">
+      <bpmn:incoming>Flow_03</bpmn:incoming>
+      <bpmn:outgoing>Flow_04</bpmn:outgoing>
+      <bpmn:outgoing>Flow_05</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_BoSungYeuCau" name="Bổ sung, chỉnh sửa yêu cầu">
+      <bpmn:incoming>Flow_04</bpmn:incoming>
+      <bpmn:outgoing>Flow_04b</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_GiaTri" name="Trên 50tr?">
+      <bpmn:incoming>Flow_05</bpmn:incoming>
+      <bpmn:outgoing>Flow_06</bpmn:outgoing>
+      <bpmn:outgoing>Flow_07</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_GiamDocDuyet" name="Giám đốc phê duyệt">
+      <bpmn:incoming>Flow_06</bpmn:incoming>
+      <bpmn:outgoing>Flow_08</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_TruongPhongDuyet" name="Trưởng phòng phê duyệt">
+      <bpmn:incoming>Flow_07</bpmn:incoming>
+      <bpmn:outgoing>Flow_09</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_GiamDocDongY" name="Đồng ý?">
+      <bpmn:incoming>Flow_08</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:outgoing>Flow_14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_TruongPhongDongY" name="Đồng ý?">
+      <bpmn:incoming>Flow_09</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+      <bpmn:outgoing>Flow_15</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_TaoDonPO" name="Tạo đơn PO">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_GuiPO" name="Gửi PO cho nhà cung cấp">
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_NCCGiaoHang" name="Nhà cung cấp giao hàng">
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+      <bpmn:outgoing>Flow_16</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_KhoNhanHang" name="Kho nhận hàng">
+      <bpmn:incoming>Flow_16</bpmn:incoming>
+      <bpmn:outgoing>Flow_17</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_KiemTraQC" name="QC kiểm tra chất lượng">
+      <bpmn:incoming>Flow_17</bpmn:incoming>
+      <bpmn:outgoing>Flow_18</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_DatQC" name="Đạt QC?">
+      <bpmn:incoming>Flow_18</bpmn:incoming>
+      <bpmn:outgoing>Flow_19</bpmn:outgoing>
+      <bpmn:outgoing>Flow_21</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_NhapKho" name="Nhập kho">
+      <bpmn:incoming>Flow_19</bpmn:incoming>
+      <bpmn:outgoing>Flow_20</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_TraHang" name="Trả hàng cho nhà cung cấp">
+      <bpmn:incoming>Flow_21</bpmn:incoming>
+      <bpmn:outgoing>Flow_22</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_NCCNhanLaiHang" name="Nhà cung cấp nhận lại hàng">
+      <bpmn:incoming>Flow_22</bpmn:incoming>
+      <bpmn:outgoing>Flow_23</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_DaNhapKho" name="Đã nhập kho">
+      <bpmn:incoming>Flow_20</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_TuChoi" name="Yêu cầu bị từ chối">
+      <bpmn:incoming>Flow_14</bpmn:incoming>
+      <bpmn:incoming>Flow_15</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_DaTraHang" name="Đã trả hàng">
+      <bpmn:incoming>Flow_23</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_01" sourceRef="StartEvent_NhuCau" targetRef="Task_TaoYeuCau" />
+    <bpmn:sequenceFlow id="Flow_02" sourceRef="Task_TaoYeuCau" targetRef="Task_KiemTraHopLe" />
+    <bpmn:sequenceFlow id="Flow_03" sourceRef="Task_KiemTraHopLe" targetRef="Gateway_HopLe" />
+    <bpmn:sequenceFlow id="Flow_04" name="Không" sourceRef="Gateway_HopLe" targetRef="Task_BoSungYeuCau" />
+    <bpmn:sequenceFlow id="Flow_04b" sourceRef="Task_BoSungYeuCau" targetRef="Task_TaoYeuCau" />
+    <bpmn:sequenceFlow id="Flow_05" sourceRef="Gateway_HopLe" targetRef="Gateway_GiaTri" />
+    <bpmn:sequenceFlow id="Flow_06" name="Có" sourceRef="Gateway_GiaTri" targetRef="Task_GiamDocDuyet" />
+    <bpmn:sequenceFlow id="Flow_07" name="Không" sourceRef="Gateway_GiaTri" targetRef="Task_TruongPhongDuyet" />
+    <bpmn:sequenceFlow id="Flow_08" sourceRef="Task_GiamDocDuyet" targetRef="Gateway_GiamDocDongY" />
+    <bpmn:sequenceFlow id="Flow_09" sourceRef="Task_TruongPhongDuyet" targetRef="Gateway_TruongPhongDongY" />
+    <bpmn:sequenceFlow id="Flow_10" name="Có" sourceRef="Gateway_GiamDocDongY" targetRef="Task_TaoDonPO" />
+    <bpmn:sequenceFlow id="Flow_11" name="Có" sourceRef="Gateway_TruongPhongDongY" targetRef="Task_TaoDonPO" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Task_TaoDonPO" targetRef="Task_GuiPO" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Task_GuiPO" targetRef="Task_NCCGiaoHang" />
+    <bpmn:sequenceFlow id="Flow_14" name="Không" sourceRef="Gateway_GiamDocDongY" targetRef="EndEvent_TuChoi" />
+    <bpmn:sequenceFlow id="Flow_15" name="Không" sourceRef="Gateway_TruongPhongDongY" targetRef="EndEvent_TuChoi" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="Task_NCCGiaoHang" targetRef="Task_KhoNhanHang" />
+    <bpmn:sequenceFlow id="Flow_17" sourceRef="Task_KhoNhanHang" targetRef="Task_KiemTraQC" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="Task_KiemTraQC" targetRef="Gateway_DatQC" />
+    <bpmn:sequenceFlow id="Flow_19" name="Đạt" sourceRef="Gateway_DatQC" targetRef="Task_NhapKho" />
+    <bpmn:sequenceFlow id="Flow_20" sourceRef="Task_NhapKho" targetRef="EndEvent_DaNhapKho" />
+    <bpmn:sequenceFlow id="Flow_21" name="Không đạt" sourceRef="Gateway_DatQC" targetRef="Task_TraHang" />
+    <bpmn:sequenceFlow id="Flow_22" sourceRef="Task_TraHang" targetRef="Task_NCCNhanLaiHang" />
+    <bpmn:sequenceFlow id="Flow_23" sourceRef="Task_NCCNhanLaiHang" targetRef="EndEvent_DaTraHang" />
+  </bpmn:process>
+</bpmn:definitions>

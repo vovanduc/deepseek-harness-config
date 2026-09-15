@@ -339,3 +339,32 @@ the answer is a workspace page rather than a plugin.
 - [ ] Still open: previewing a `.bpmn` **from a chat message**. The MCP route stays blocked at the
   plugin layer, and the upstream BPMN MCP servers are tiny (⭐12 / ⭐9; the widely-cited `bpmn-js-mcp`
   repo 404s).
+
+## 2026-09-15 (later still) — does asking for BPMN in chat make this happen? No.
+
+Tested by actually asking the running `dsh web`, not by reasoning about it.
+
+- [x] **Nothing auto-triggers.** "Vẽ sơ đồ BPMN cho quy trình mua hàng" → 45 tool calls, 4 minutes,
+  and the output was `diagrams/quy-trinh-mua-hang.{mmd,png,svg}`: a **mermaid `flowchart TD` with
+  `subgraph` lanes, called BPMN**. Nothing rendered in the chat (0 mermaid fences, 0 images) — just
+  file chips. The agent even said so itself: *"chọn mermaid vì nó render được trong chat"*, and that
+  mermaid has no BPMN. A follow-up that named `experiments/bpmn-viewer/` and the runbook produced
+  real BPMN (`*.source.bpmn` → `bpmn-auto-layout` → 44 shapes, PNG + SVG, `pass:true`) — so the path
+  works, but only when someone says where it is.
+- [x] **Why:** the viewer is a static workspace page and the runbook is workspace-local, so neither can
+  fire on its own; an agent in another workspace sees neither. The only auto-surface is a **skill** in
+  `~/.dsh/skills`, whose name+description `dsh-tool-skill` injects into every session's context.
+- [x] **Added `skills/draw-bpmn/`** — notation decision table (mermaid vs BPMN), the four steps, five
+  traps including lanes and label collisions. Linked to `~/.dsh/skills` (`doctor.sh` READY, 7 bundles,
+  `init.sh` green). No restart needed: the catalog is recomputed per `agent/pre-step`, but a **new
+  session** is required — plugins and skills compose per session.
+- [x] **`inline.mjs`** — writing a fresh `.bpmn` next to `index.html` does **not** change what the
+  viewer shows; the page was still rendering `Process_PurchaseRequest` while the agent's
+  `Process_QuyTrinhMuaHang` sat beside it, and it looked fine. The script refuses XML without
+  `bpmndi:BPMNDiagram` and prints the process id it inlined. Re-inlined: 44 shapes, 64 elements,
+  `pass:true`.
+- [ ] Honest limit: `bpmn-auto-layout` **drops lanes/pools** (0 lanes in the DI, no error). The agent
+  hit this too. Roles must go in the task label or the lane DI must be hand-written.
+- [ ] Housekeeping decided explicitly, not swept in: `diagrams/` is my test prompt's mermaid output
+  (the very mislabel this skill exists to prevent) — left untracked; `.gitignore` now states *why*
+  `.gstack/` is ignored (it holds `terminal-internal-token`, a credential).

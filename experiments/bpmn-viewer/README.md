@@ -12,13 +12,16 @@ the diagram must be *BPMN*: openable in Camunda Modeler / bpmn.io, or consumed b
 
 | File | Role |
 |---|---|
-| `index.html` | the viewer — bpmn-js + the diagram's XML inlined, ~11 KB |
-| `purchase.bpmn` | the source process, **already run through `bpmn-auto-layout`** (carries `bpmndi:BPMNDiagram`) |
+| `index.html` | the viewer — bpmn-js + the diagram's XML inlined, ~16 KB |
+| `*.source.bpmn` | the process **as authored** — no DI; this is the file you edit |
+| `*.bpmn` | the same process after `bpmn-auto-layout` — carries `bpmndi:BPMNDiagram` |
+| `inline.mjs` | puts a laid-out `.bpmn` into `index.html`, refusing XML without DI |
+| `preview-sim.mjs` | reproduces the host's document-preview pipeline offline and prints the packed asset set |
 | `vendor/bpmn-navigated-viewer.production.min.js` | bpmn-js 18.28.0 UMD navigated-viewer, 194 514 B |
 | `vendor/{diagram-js,bpmn-js,bpmn-embedded}.css` | 27 562 / 4 159 / 96 188 B — styles + icon font |
-| `preview-sim.mjs` | reproduces the host's document-preview pipeline offline and prints the packed asset set |
+| `purchase.bpmn`, `purchase-request.*` | two worked examples |
 
-Total shipped to the page: **4 assets, 333 995 B** — well inside the preview's limits (4 MB per
+Total shipped to the page: **4 assets, 345 144 B** — well inside the preview's limits (4 MB per
 asset, 32 MB / 64 files total).
 
 ## How it reaches the browser
@@ -122,12 +125,17 @@ failure. Pair the resize with a screenshot or a same-cell read to force the fram
 ## Regenerating
 
 ```bash
-# 1. edit the process, strip every bpmndi/dc/di section -> process.bpmn
+# 1. edit <name>.source.bpmn (no bpmndi/dc/di section)
 npm install bpmn-auto-layout@1.3.0
 node -e "require('bpmn-auto-layout').layoutProcess(require('node:fs').readFileSync(0,'utf8'))\
-.then(x=>process.stdout.write(x))" < process.bpmn > purchase.bpmn
-# 2. re-inline purchase.bpmn into index.html's <script type="text/xml" id="bpmnxml"> block
-node preview-sim.mjs && node -e "…"   # then read /tmp/preview-sim.html's frame #fit
+.then(x=>process.stdout.write(x))" < <name>.source.bpmn > <name>.bpmn
+
+# 2. put it in the page — the script refuses XML that lacks DI, so this cannot silently
+#    leave the viewer on a stale process (which is exactly what happened once)
+node inline.mjs <name>.bpmn
+
+# 3. check it
+node preview-sim.mjs        # then read #fit inside the frame; expect {"pass":true,...}
 ```
 
 Need a PNG/SVG/PDF instead of a page? `bpmn-to-image` does it in one command (~6.5 s, but 70 MB of

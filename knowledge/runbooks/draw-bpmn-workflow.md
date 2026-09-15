@@ -94,10 +94,21 @@ Two traps that only show up in this host:
 - The viewer must **measure itself**: a parent cannot read a sandboxed frame's DOM
   (`SecurityError: Blocked a frame with origin "null"`), and a page global is not reliably readable
   across automation worlds. Publish the check into the DOM (`<pre id="fit">`) and read that.
+- **Re-inlining by hand leaves the page on a stale process.** `index.html` embeds the XML, so a
+  regenerated `.bpmn` is invisible until it is copied in — and the viewer keeps happily rendering the
+  *old* diagram, which looks like success. Use `node inline.mjs <file>.bpmn`: it refuses XML without
+  `bpmndi:BPMNDiagram` and prints the process id it inlined. Confirm the id changed.
+- **`bpmn-auto-layout` silently drops lanes and pools.** `bpmn:Lane` is not a flow element, so the
+  layout grid never places it: the DI comes back with the tasks laid out and **0 lanes**, no error.
+  Asked for a swimlane diagram, either model the roles as a label prefix (`[GĐ] Phê duyệt`) or add
+  the lane DI by hand — and say which. Never describe the result as swimlanes when they are absent.
+- **Short gateway branches collide their edge labels with the gateway label.** Auto-layout places the
+  label at the flow's midpoint; on a short branch that lands on the target diamond. Lengthen the flow
+  or shorten the label — this is a layout-engine limitation to note, not a bug to chase.
 
 ```bash
 cd experiments/bpmn-viewer && node preview-sim.mjs   # reproduces the host pipeline offline
-# then read #fit inside the frame: {"pass":true,"elements":38,...}
+# then read #fit inside the frame: {"pass":true,"elements":64,...}
 ```
 
 # Export to an image (simpler than a viewer)
@@ -114,6 +125,9 @@ node node_modules/.bin/bpmn-to-image process.layout.bpmn:process.png --no-footer
 Verified 2026-09-15: both inputs above exported in **6.5 s** — `purchase.png` (32 945 B) and
 `gen.svg` (36 417 B), both with Vietnamese labels and correct gateway/task semantics.
 
+**Multiple targets are comma-separated after a single colon** — `file.bpmn:a.png,b.svg`. Repeating
+the colon (`file.bpmn:a.png:b.svg`) silently writes only the first target and exits 0.
+
 Cost, measured: **70 MB `node_modules`** (`bpmn-js`, `meow`, `chalk`, `puppeteer`) plus a Chrome
 download if the machine has none — this one already had `~/.cache/puppeteer` (1.5 GB) from
 2025-12-11, so the install reused it. Prefer this over the viewer when the output is an artifact;
@@ -121,6 +135,29 @@ prefer the viewer when the diagram must be *interactive* (pan/zoom, or a live `.
 
 # Traps
 
+- **`bpmn-auto-layout@1.3.0` ignores pools and lanes.** It lays out flow nodes only: a process whose
+  `laneSet` assigns all 22 nodes to 5 lanes came back with **22 `BPMNShape`, zero for any
+  `bpmn:Lane` or `bpmn:Participant`** (the same result with and without the surrounding
+  `bpmn:collaboration`), and `bpmn-js` then reports **0 lane elements** while still rendering the
+  flow with no warnings. `getDefaultSize` has lane/participant entries in the bundle, which is
+  misleading — nothing reaches them. So an auto-laid-out diagram **cannot have swimlanes**; carry the
+  roles in task names (`Giám đốc phê duyệt`, `Kho nhận hàng`) and add lanes by hand in Camunda
+  Modeler if the picture must have them.
+- **`bpmn-to-image` needs Chromium launched with `--no-sandbox` on this machine.** Without it the
+  export dies as `TimeoutError: Timed out after waiting 30000ms` — the same crash the browse daemon
+  hits (`newPage: Target crashed`). The CLI exposes no arg for it, so wrap the binary and point
+  puppeteer at the wrapper:
+  ```bash
+  printf '#!/bin/sh\nexec "%s" --no-sandbox "$@"\n' \
+    "$HOME/.cache/puppeteer/chrome/mac_arm-153.0.8010.36/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \
+    > /tmp/chrome-nosandbox.sh && chmod +x /tmp/chrome-nosandbox.sh
+  PUPPETEER_CACHE_DIR="$HOME/.cache/puppeteer" \
+  PUPPETEER_EXECUTABLE_PATH=/tmp/chrome-nosandbox.sh \
+    node node_modules/.bin/bpmn-to-image process.bpmn:process.png --no-footer
+  ```
+  `PUPPETEER_EXECUTABLE_PATH` also skips the Chrome revision check, so any cached build works.
+  Install npm packages with `--cache=/tmp/npm-cache` under the workspace-write sandbox: the default
+  `~/.npm` is not writable and npm fails with a bare `EPERM`.
 - **`fetch()` of the `.bpmn` next to the HTML fails under `file://`** (`net::ERR_FAILED` — CORS on
   file URLs). Inline the XML in a `<script type="text/xml">` block, or serve over HTTP.
 - **`view.html` alone proves nothing.** A page that loads the viewer and stops renders a blank canvas
