@@ -20,7 +20,7 @@ The read direction is the point of the link: one file, live without a restart. T
 # Notes
 
 - A pre-existing regular file is moved aside to `*.bak-<timestamp>` before the link is made.
-- **The app breaks this link by itself.** Any UI settings write — a model pick, a font size, even dismissing the welcome notice — leaves a regular file behind. Expect to relink; `doctor.sh` requires the arrow and reports whether the drifted file has merely not been used yet or has already diverged.
+- **The app breaks this link itself, on an explicit settings write** — a model pick, a font size, or acknowledging the welcome notice. Merely opening the UI, switching workspace or starting a session does not write settings and leaves the link intact. Expect to relink after a settings change; `doctor.sh` requires the arrow and reports whether the drifted file has merely not been used yet or has already diverged.
 - The welcome notice is ack'd by writing `ui-onboarding: {welcomeNoticeVersion: <version>}`. It is committed here so the notice does not reappear after every relink; bump it when dsh bumps `WELCOME_NOTICE_VERSION` (`dsh-client-ui-settings-models`).
 - `dsh --profile headless --dump-config` composes whatever `$DSH_HOME/settings.yaml` resolves to.
 

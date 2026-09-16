@@ -511,3 +511,16 @@ missing the whole `omp-gateway` route the repo declared. Chased it to the source
 - [x] Note on the model picker: it showed `GLM 5.3` in the panel because that **session** carries the
   model selected during the drift test, not because the default changed — the repo default
   (`opencode-go/deepseek-flash`) is what `init.sh` asserts and what `doctor.sh` exercises.
+
+### Correction — the drift trigger is a settings *write*, not "using the UI"
+
+An earlier bullet here said ordinary UI use writes settings and drift should be expected after any
+session in the UI. That was wrong, and it contradicted my own check (opening a tab left the link
+intact) plus the source: `acknowledge()` has exactly one caller — the welcome modal's Continue
+button — and the only other path is an explicit settings write.
+
+Accurate rule: **every explicit settings write drifts the link** (model pick, font size,
+acknowledging the notice). Opening the UI, switching workspace and starting a session only *read*
+settings and leave the link intact. Which also upgrades the `ui-onboarding` commit from cosmetic to
+a cure: with the key present, `state.acknowledged` is true on load and the modal returns `null`
+before rendering, so the most frequent drifting click no longer exists.

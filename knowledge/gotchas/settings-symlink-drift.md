@@ -24,8 +24,14 @@ picker drifted it inside 3 seconds. The live file then differed exactly as predi
 `[ text, image ]` re-serialised, `agent-default-model` rewritten, a new `ui-onboarding` key.
 
 So it is **not** a stray `cp`, a restore, or a skipped install step (the first version of this
-note guessed that, wrongly). It is the app's normal write path. Any UI settings change causes
-it. Four backup files tell the story:
+note guessed that, wrongly). It is the app's normal settings write path. Every **explicit settings
+write** causes it: a model pick, a font size, and acknowledging the welcome notice — `acknowledge()`
+has exactly one caller, the modal's Continue button (`dsh-client-ui-settings-models`), and it
+persists the same way. All three are the *same* mechanism, not three mechanisms.
+
+What does **not** drift it, measured: opening the UI, switching workspace, starting a session. Those
+read settings without writing them. So the trigger is a settings change, not "using the UI". Four
+backup files tell the story:
 
 ```
 settings.yaml.bak-20260910-153154   settings.yaml.bak-20260912-101238
@@ -46,17 +52,40 @@ it was validating a file the server was not reading.
 ls -la ~/.dsh/settings.yaml      # confirm the arrow
 ```
 
-`doctor.sh` now requires the link, resolved into this repo, and fails with a message naming the
-cause:
+`doctor.sh` now requires the link, resolved into this repo, and distinguishes how bad the drift
+already is — a latent one has not cost you anything yet, a diverged one means the server is already
+running something else:
 
 ```
-FAIL  ~/.dsh/settings.yaml is a regular file, not a symlink to <repo>/settings.yaml — a UI
-      settings write replaced the link, so repo edits no longer reach the server; fix: ./install.sh
+FAIL  ~/.dsh/settings.yaml is a regular file, not a symlink to <repo>/settings.yaml — dsh replaced
+      the link when it last wrote settings, and content still matches the repo, so nothing is wrong
+      yet — the next repo edit is what will not apply; fix: ./install.sh --no-install
+
+FAIL  ~/.dsh/settings.yaml is a regular file, not a symlink to <repo>/settings.yaml — dsh replaced
+      the link when it last wrote settings, and the live file has also DIVERGED from the repo, so the
+      server is running settings this repo does not describe; fix: ./install.sh --no-install
 ```
 
-Run `doctor.sh` after using the UI to change anything. Because the link is the invariant, the
-check is only meaningful on the live path — there is no way to make the app write through a link
-without patching it, so expect to relink after UI edits and let the check catch you.
+Check after any explicit settings change. Opening the UI, switching workspace or starting a session
+does **not** write settings and leaves the link intact (measured); the drifts come from settings
+writes.
+
+# One of the three triggers is now cured, not mitigated
+
+Acknowledging the welcome notice was the most common drift here — five dismissals, each one
+re-breaking a link that had just been restored. It is fixed rather than documented away: the repo
+`settings.yaml` now carries the ack,
+
+```yaml
+ui-onboarding:
+  welcomeNoticeVersion: 2026-08-13.1
+```
+
+so `state.acknowledged` is already true on load and the modal returns `null` before rendering — there
+is no Continue button left to click, therefore no write. The value is
+`WELCOME_NOTICE_ACK_FIELD`/`WELCOME_NOTICE_VERSION` from `dsh-client-ui-settings-models`; a stale
+value is harmless beyond bringing the notice back. Verified: the notice no longer appears on a fresh
+UI load and the link survives it intact.
 
 # A second trap in the same write
 
