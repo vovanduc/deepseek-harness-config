@@ -18,6 +18,11 @@ The running server reads the symlink target, so a repo edit applies to the next 
 # Notes
 
 - A pre-existing regular file is moved aside to `*.bak-<timestamp>` before the link is made.
+- **The app breaks this link by itself.** dsh persists settings with `writeFile` + `rename`, and
+  `rename` replaces the link rather than following it, so *any* UI settings change — a model pick,
+  a font size — leaves a regular file behind. Expect to relink after UI edits; `doctor.sh` requires
+  the arrow and fails loudly, so let it catch you. Cause and reproduction:
+  [../gotchas/settings-symlink-drift.md](../gotchas/settings-symlink-drift.md).
 - `dsh --profile headless --dump-config` composes whatever `$DSH_HOME/settings.yaml` resolves to.
 
 # Related

@@ -96,11 +96,29 @@ else
 fi
 
 # --- settings ---------------------------------------------------------------
-if [ -L "$DSH_HOME/settings.yaml" ] || [ -f "$DSH_HOME/settings.yaml" ]; then
-  record ok settings "$DSH_HOME/settings.yaml present"
-else
-  record fail settings "$DSH_HOME/settings.yaml missing — run ./install.sh"
+# The symlink IS the invariant, not the file's presence. dsh writes settings by
+# writeFileAtomic — write `<path>.<hex>.tmp`, then rename() over the target — and rename
+# replaces the link itself with a regular file. So any UI settings write (picking a model,
+# changing the font size) silently unpicks it, and from then on repo edits still look
+# committed while never reaching the server, with every other check green. Requiring the
+# link, resolved into this repo, turns the next silent drift into a red check.
+settings="$DSH_HOME/settings.yaml"
+if [ ! -e "$settings" ]; then
+  record fail settings "$settings missing — run ./install.sh"
   finish
+elif [ ! -L "$settings" ]; then
+  record fail settings "$settings is a regular file, not a symlink to $REPO/settings.yaml — a UI settings write replaced the link, so repo edits no longer reach the server; fix: ./install.sh"
+else
+  target="$(readlink "$settings")"
+  case "$target" in
+    /*) resolved="$target" ;;
+    *)  resolved="$(dirname "$settings")/$target" ;;
+  esac
+  if [ "$(cd "$(dirname "$resolved")" 2>/dev/null && pwd)/$(basename "$resolved")" = "$REPO/settings.yaml" ]; then
+    record ok settings "$settings → $REPO/settings.yaml"
+  else
+    record fail settings "$settings points at $target, not $REPO/settings.yaml — fix: ./install.sh"
+  fi
 fi
 
 # The composed tree is the only real parse check: a bad key fails here.

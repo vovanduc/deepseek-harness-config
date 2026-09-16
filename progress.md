@@ -469,3 +469,35 @@ and already carries the Devin quirks. Trade-off: two loopback processes and a de
   (the machine had none), keys seeded into `~/.dsh/.env`, `doctor.sh` READY (6 ok), `dsh web`
   booted clean (4 client bundles served, 0 errors), and a composer session on
   *SWE-2 (Devin, via omp)* worked. Setup on another machine: `knowledge/runbooks/new-machine-setup.md`.
+
+## 2026-09-16 — the settings symlink breaks itself, and doctor could not see it
+
+Applying the config found the symlink drifted *again* — the fourth time — and the live file was
+missing the whole `omp-gateway` route the repo declared. Chased it to the source.
+
+- [x] **Root cause, code-confirmed then reproduced.** `dsh-settings-file` persists through
+  `dsh-atomic-write`: `writeFile('<path>.<hex>.tmp')` then `rename(temp, path)`, with no
+  `realpath`. `rename()` replaces the **link**, not its target. So *any* UI settings write breaks
+  it — proven by restoring the link and picking a model in the picker: drifted within 3 s, and the
+  live file showed exactly the predicted changes (`[ text, image ]` reserialised,
+  `agent-default-model` rewritten, new `ui-onboarding` key). The first version of the gotcha blamed
+  a stray `cp`/restore/skipped install; that guess was wrong and is corrected.
+- [x] **Why four drifts stayed green:** `doctor.sh` accepted `[ -L … ] || [ -f … ]` and recorded
+  "present" — a regular file satisfies it. One of those drifts hid the missing `omp-gateway` route
+  for a day. `settings` now **requires the link, resolved into this repo**, and the failure names
+  the cause and the fix. Verified: regular file → NOT READY; link to `/tmp` → NOT READY; correct
+  link → READY (6 ok).
+- [x] **A second trap in the same write.** The app had persisted
+  `agent-default-model.provider: vision-toolkit-opencode-go` — an id registered at *runtime* by
+  `@anionex/dsh-vision-toolkit` and only on the `web` profile, absent from `llm-pi-ai.providers`.
+  Had that landed with the link intact, the shared default would name a provider that does not
+  exist for `headless`/`tui`/`sdk`. `init.sh` **already** asserts this (negative-tested: exit 1 on
+  the bad id, 0 restored) — but it reads the repo file, so it only helps once the link is intact.
+  The two checks are complementary, not redundant.
+- [x] Applying the config afterwards: `./install.sh --no-install` relinked, 7 skills linked, 5/5
+  plugins already installed, `doctor.sh` READY. Broker + gateway started; `swe-2 via gateway: OK`;
+  a real dsh turn on SWE-2 returned `GW OK` both headless (4.2 s) and in the UI (5 s, badge
+  `SWE-2 (Devin, via omp)`).
+- [ ] Standing caveat: **expect to relink after using the UI panels.** There is no way to make the
+  app write through a link without patching it, so the check is the mitigation, not a fix. Run
+  `./scripts/doctor.sh` after changing settings in the UI.

@@ -72,8 +72,16 @@ image stays in the session log, so the same request repeats until the session mo
 ## Settings changes do nothing / dsh will not start
 
 ```bash
-dsh --profile headless --dump-config >/dev/null   # the composed tree, or the parse error
+ls -la ~/.dsh/settings.yaml                        # the arrow, or a regular file?
+./scripts/doctor.sh                                # exit 1 names the cause
+dsh --profile headless --dump-config >/dev/null    # the composed tree, or the parse error
 ```
+
+**Check the arrow first.** dsh persists settings with `writeFile` + `rename`, and `rename` replaces
+a symlink instead of following it — so *any* UI settings change (picking a model, changing the font
+size) leaves a regular file where the link was, and from then on your repo edits never reach the
+server while the file itself still looks valid. `./install.sh --no-install` relinks it. Full cause:
+`knowledge/gotchas/settings-symlink-drift.md`.
 
 A key written with nothing after the colon (`supportsDeveloperRole:`) is refused rather than ignored,
 and the error names the field. Unknown keys in a plugin section fail the same way.
