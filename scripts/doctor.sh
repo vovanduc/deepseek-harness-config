@@ -107,7 +107,14 @@ if [ ! -e "$settings" ]; then
   record fail settings "$settings missing — run ./install.sh"
   finish
 elif [ ! -L "$settings" ]; then
-  record fail settings "$settings is a regular file, not a symlink to $REPO/settings.yaml — a UI settings write replaced the link, so repo edits no longer reach the server; fix: ./install.sh"
+  # Say how bad it already is: a drifted file that still matches the repo costs you the next
+  # edit; one that has diverged is already serving something the repo does not describe.
+  if cmp -s "$settings" "$REPO/settings.yaml"; then
+    detail='content still matches the repo, so nothing is wrong yet — the next repo edit is what will not apply'
+  else
+    detail='the live file has also DIVERGED from the repo, so the server is running settings this repo does not describe'
+  fi
+  record fail settings "$settings is a regular file, not a symlink to $REPO/settings.yaml — dsh replaced the link when it last wrote settings, and $detail; fix: ./install.sh --no-install"
 else
   target="$(readlink "$settings")"
   case "$target" in

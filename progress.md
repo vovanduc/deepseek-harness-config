@@ -501,3 +501,13 @@ missing the whole `omp-gateway` route the repo declared. Chased it to the source
 - [ ] Standing caveat: **expect to relink after using the UI panels.** There is no way to make the
   app write through a link without patching it, so the check is the mitigation, not a fix. Run
   `./scripts/doctor.sh` after changing settings in the UI.
+
+- [x] **Follow-up while verifying: ordinary UI use writes settings too.** Dismissing the onboarding
+  notice drifted the link a fifth time (the app persists `ui-onboarding.welcomeNoticeVersion`), so
+  this is not limited to deliberate setting changes. `doctor.sh` now distinguishes the two severities:
+  *content still matches the repo* (latent — costs you the next edit) vs *the live file has DIVERGED*
+  (the server is already running settings the repo does not describe — the case that hid
+  `omp-gateway`). Both branches verified, with the wrong-target and correct-link branches.
+- [x] Note on the model picker: it showed `GLM 5.3` in the panel because that **session** carries the
+  model selected during the drift test, not because the default changed — the repo default
+  (`opencode-go/deepseek-flash`) is what `init.sh` asserts and what `doctor.sh` exercises.
