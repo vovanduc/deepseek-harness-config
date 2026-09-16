@@ -8,7 +8,7 @@ tags: [dsh, layout]
 
 | Path | Owner | Notes |
 |---|---|---|
-| `$DSH_HOME/settings.yaml` | this repo (symlink) | live config; edits here are committable |
+| `$DSH_HOME/settings.yaml` | this repo (symlink) | live config: the server reads the repo file through the link. One-way — a UI settings write replaces the link, so it does not come back here |
 | `$DSH_HOME/.env` | the machine | seeded from `.env.example`, mode 600, gitignored |
 | `$DSH_HOME/.credentials.yaml` | the Web UI Models page | written by dsh, outside the repo |
 | `$DSH_HOME/skills/` | symlinks from `install.sh` | one entry per `skills/<name>/` |

@@ -78,9 +78,11 @@ dsh --profile headless --dump-config >/dev/null    # the composed tree, or the p
 ```
 
 **Check the arrow first.** dsh persists settings with `writeFile` + `rename`, and `rename` replaces
-a symlink instead of following it — so *any* UI settings change (picking a model, changing the font
-size) leaves a regular file where the link was, and from then on your repo edits never reach the
-server while the file itself still looks valid. `./install.sh --no-install` relinks it. Full cause:
+a symlink instead of following it — so an explicit settings write (picking a model, changing the font
+size, acknowledging the welcome notice) leaves a regular file where the link was, and from then on
+your repo edits never reach the server while the file itself still looks valid. Opening the UI,
+switching workspace and starting a session only *read* settings, so they do not cause this.
+`./install.sh --no-install` relinks it. Full cause:
 `knowledge/gotchas/settings-symlink-drift.md`.
 
 A key written with nothing after the colon (`supportsDeveloperRole:`) is refused rather than ignored,

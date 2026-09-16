@@ -43,8 +43,11 @@ fi
 # --- 2. harness home --------------------------------------------------------
 mkdir -p "$DSH_HOME" "$DSH_HOME/skills"
 
-# settings.yaml is symlinked, not copied: the running server then reads the repo
-# file, and edits made in the web UI land in the repo ready to commit.
+# settings.yaml is symlinked, not copied: the running server then READS the repo file.
+# The write direction is one-way — dsh persists settings with writeFile + rename, and
+# rename replaces the link, so a UI settings change lands in a standalone
+# ~/.dsh/settings.yaml that never reaches the repo. Re-run this script to relink;
+# scripts/doctor.sh fails with the reason if the link has been replaced.
 settings="$DSH_HOME/settings.yaml"
 if [ -L "$settings" ]; then
   say "settings.yaml already linked"

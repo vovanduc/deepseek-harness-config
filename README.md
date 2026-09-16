@@ -50,9 +50,14 @@ $EDITOR ~/.dsh/.env          # put the real key in
 then runs the doctor. It is idempotent and moves anything it would overwrite to `*.bak-<timestamp>`.
 It stops before creating anything when `scripts/check-node.sh` finds a Node below 20.
 
-Because `settings.yaml` is a **symlink**, the file the running server reads is this repo's file:
-changes made in the web UI's Settings pages land here and are ready to `git commit`. The same holds
-in reverse — edit here, and the next request picks it up (no restart).
+Because `settings.yaml` is a **symlink**, the file the running server reads is this repo's file: edit
+here and the next request picks it up (no restart). The write direction is **not** symmetrical — dsh
+persists settings with `writeFile` + `rename`, and `rename` replaces the link, so a change made in
+the web UI's Settings pages lands in a standalone `~/.dsh/settings.yaml` that never reaches this repo.
+To keep such a change, read it out and write it into the repo by hand, then re-run `./install.sh`;
+`./scripts/doctor.sh` fails with the reason if the link has been replaced.
+See [docs/troubleshooting.md](docs/troubleshooting.md) and
+[knowledge/gotchas/settings-symlink-drift.md](knowledge/gotchas/settings-symlink-drift.md).
 
 ## Running it
 
