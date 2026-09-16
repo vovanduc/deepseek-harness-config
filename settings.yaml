@@ -87,3 +87,11 @@ permission:
 
 ui-theme:
   preference: dark
+
+# The welcome notice is acknowledged by writing this key — the app does it when you click
+# Continue, in the same atomic write that replaces the settings symlink. Committing the ack
+# here means the notice stays dismissed across relinks instead of re-appearing (and re-drifting)
+# on the next UI load. Bump the value when dsh bumps WELCOME_NOTICE_VERSION
+# (@deepseek-ai/dsh-client-ui-settings-models); a stale value only brings the notice back.
+ui-onboarding:
+  welcomeNoticeVersion: 2026-08-13.1
