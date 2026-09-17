@@ -63,8 +63,6 @@ Two features closed after `feat-013` (the diagram skill), which is what this fil
   `./scripts/omp-gateway.sh start` (idempotent; the `.env` key is unchanged).
 - **`omp` here is 18.1.22**, below the `>= 18.2` the docs state, yet `auth-broker` and
   `auth-gateway` exist and work. Either the floor is stale or it is a soft note.
-- **`bpmn-auto-layout` drops lanes and pools**, and collapses several branches onto one channel;
-  real swimlanes need hand-written lane DI or Camunda Modeler.
 - **Skills and plugins compose per session** — a session opened before an install does not see it. No
   restart is needed for a skill, but a new session is.
 - `web_search` is still unusable here (modsearch's keyless route 403s from this IP); `read_page` works.

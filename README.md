@@ -16,7 +16,7 @@ dsh.version          the dsh build this config is verified against
 .nvmrc               Node major pinned for CI (22)
 plugins.json         plugins installed per dsh profile, version-pinned
 skills/              SKILL.md bundles linked into ~/.dsh/skills
-experiments/         self-contained PoCs with a headless verification loop (bpmn-viewer, office-3d-poc)
+experiments/         self-contained PoCs with a headless verification loop (office-3d-poc)
 scripts/doctor.sh    read-only health check: CLI, settings parse, credential, live inference call
 scripts/update-ponytail.sh  sync skills/ from the pinned upstream ponytail release
 scripts/install-plugins.sh  apply plugins.json to the local dsh profiles

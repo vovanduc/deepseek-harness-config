@@ -524,3 +524,16 @@ acknowledging the notice). Opening the UI, switching workspace and starting a se
 settings and leave the link intact. Which also upgrades the `ui-onboarding` commit from cosmetic to
 a cure: with the key present, `state.acknowledged` is true on load and the modal returns `null`
 before rendering, so the most frequent drifting click no longer exists.
+
+## 2026-09-17 — Machine re-applied, BPMN removed
+
+- [x] `./init.sh` exit 0; `./install.sh` → dsh 0.1.5-rc.1 present, 5/5 plugins already installed,
+  `doctor.sh` READY. **Symlink drift #5**: `~/.dsh/settings.yaml` was a regular file again (UI model pick
+  → `vision-toolkit-omp-gateway/devin/swe-2`); relinked, backup `settings.yaml.bak-20260917-224203`,
+  nothing merged (profile-local provider id).
+- [x] Gateway was down after reboot → `omp-gateway.sh start` → `swe-2 via gateway: OK`. `dsh-web`
+  restarted (`pty=false`, :4319): token 303, `/` 200, 4 plugin client bundles in the roster.
+- [x] **BPMN removed from the repo on request**: `skills/draw-bpmn/`, `experiments/bpmn-viewer/`,
+  `knowledge/runbooks/draw-bpmn-workflow.md`, the runbook index row, the handoff risk line, the README
+  line; `~/.dsh/skills/draw-bpmn` unlinked. Mermaid (`dsh-mermaid`) remains the diagram path — ER and
+  flowcharts. The dated 2026-09-15 sections above are history and stay as written.
