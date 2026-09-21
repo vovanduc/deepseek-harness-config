@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-15 22:1x (+07) — `feat-014` closed: Devin SWE-2 routed through omp's auth-gateway
-**Active Feature:** none — `feat-010`…`feat-014` all closed; no open features
+**Last Updated:** 2026-09-21 (+07) — operational session: started `dsh web` (:4319) + omp-gateway (broker :8765 / gateway :4000, `swe-2 via gateway: OK`). Doctor caught settings-symlink **drift #5** (written 2026-09-18, diverged: a UI default-model change to `vision-toolkit-omp-gateway / devin/swe-2 / high` + cosmetic flow-style diff); relinked via `./install.sh --no-install`, user declined merging the UI change → repo keeps `opencode-go / deepseek-flash`. `doctor.sh` READY (6 ok).
+**Active Feature:** none — `feat-010`…`feat-015` all closed; no open features
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
 
