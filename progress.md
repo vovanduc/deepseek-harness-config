@@ -2,10 +2,23 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-21 (+07) — operational session: started `dsh web` (:4319) + omp-gateway (broker :8765 / gateway :4000, `swe-2 via gateway: OK`). Doctor caught settings-symlink **drift #5** (written 2026-09-18, diverged: a UI default-model change to `vision-toolkit-omp-gateway / devin/swe-2 / high` + cosmetic flow-style diff); relinked via `./install.sh --no-install`, user declined merging the UI change → repo keeps `opencode-go / deepseek-flash`. `doctor.sh` READY (6 ok).
-**Active Feature:** none — `feat-010`…`feat-015` all closed; no open features
+**Last Updated:** 2026-10-07 (+07) — research + scope session. Verified the official **dsh desktop
+app** (profile `desktop` = `dsh-base` + `dsh-web-app`, shares `~/.dsh`), critiqued the ChatGPT
+research brief against the installed `0.1.5-rc.1`, and **expanded repo scope**: this repo now hosts
+the Grok-Bot-style teammates product (per-bot ACP profile + own `DSH_HOME` + later a container,
+supervisor speaks ACP v1) alongside the config deliverable. Six new knowledge files + ADRs
+(`systems/profiles-and-bundles`, `systems/acp-surface`, gotchas ×3, `decisions/dsh-as-teammates-engine`,
+`decisions/repo-hosts-teammates-product`); brief committed to `docs/research/`.
+**Active Feature:** none in progress — `feat-016` (vertical slice: two ACP bots) is `not-started`, queued next.
 **Repo:** `deepseek-harness-config` @ `main`
 **Harness:** adopted 2026-09-10 (`AGENTS.md`, `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md`, `docs/specs|plans`, `knowledge/`)
+
+### Prior state (2026-09-21)
+
+Operational session: started `dsh web` (:4319) + omp-gateway (broker :8765 / gateway :4000,
+`swe-2 via gateway: OK`). Doctor caught settings-symlink **drift #5**; relinked via
+`./install.sh --no-install`, user declined merging the UI change → repo keeps
+`opencode-go / deepseek-flash`. `doctor.sh` READY (6 ok).
 
 ## Status
 
@@ -26,6 +39,8 @@
 - [x] `feat-012`: `experiments/office-3d-poc/` — a one-file Three.js office with a headless-Chromium verification loop, built and corrected over three render-and-look rounds.
 - [x] `feat-014`: `omp-gateway` route — Devin SWE-2 (no public API) reaches dsh through omp's local auth-gateway; `scripts/omp-gateway.sh` brings broker + gateway up in the order the boot-time catalog needs. Measured at the gateway, then confirmed in the composer.
 - [x] `./init.sh` passes; harness audit 100/100; knowledge links resolve.
+- [x] 2026-10-07: verified desktop app exists and shares `~/.dsh` (`profiles/desktop` bundles `dsh-base`+`dsh-web-app`); `dsh --profile probe-bot --from-default-profile acp --dump-default-config` run and removed; ACP v1 surface confirmed incl. `request_permission` and `set_config_option`; session store found keyed by workspace under `DSH_HOME`, not by profile; OTel telemetry found on by default.
+- [x] 2026-10-07: repo scope expanded to config + product (`AGENTS.md`, `README.md`, `decisions/repo-hosts-teammates-product`); `feat-016` queued.
 
 ### What's In Progress
 
@@ -33,7 +48,12 @@
 
 ### What's Next
 
-**No open features.** Candidates, in the order they would pay off:
+**`feat-016` is queued:** the teammates-product vertical slice — two ACP bot profiles, isolated
+`DSH_HOME`s, a minimal supervisor. Read `knowledge/systems/acp-surface.md` +
+`knowledge/decisions/dsh-as-teammates-engine.md` first; spec source is
+`docs/research/dsh-grok-bot-brief-2026-10-07.md`.
+
+Other candidates, in the order they would pay off:
 
 1. **Raise the output ceiling if long single-file generations matter.** The route declares
    `maxTokens: 65536`; DeepSeek's own API allows 384 K. The PoC file is 37 KB (~11 K tokens) so it

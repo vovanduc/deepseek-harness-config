@@ -9,6 +9,11 @@ Everything here is dsh-only: providers, default model, session defaults, skills 
 harness (`AGENTS.md`, `feature_list.json`, `knowledge/`). Secrets are never committed — credentials
 live in `~/.dsh/.env`, which is gitignored.
 
+The repo also hosts the **teammates product** built on dsh — a Grok-Bot-style roster of agents, each
+with its own computer. Decision record:
+[knowledge/decisions/dsh-as-teammates-engine.md](knowledge/decisions/dsh-as-teammates-engine.md);
+source research: [docs/research/](docs/research/).
+
 ```
 settings.yaml        providers + default model + session defaults   (symlinked to ~/.dsh/settings.yaml)
 .env.example         credential template                            (copied to ~/.dsh/.env once)

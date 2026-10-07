@@ -1,8 +1,12 @@
 # AGENTS.md — deepseek-harness-config
 
 This repo is my **DeepSeek Harness (`dsh`) configuration**, kept in git so a second machine starts
-in the same state as the first. There is no application code: the deliverable is `settings.yaml`,
-`skills/`, `install.sh`, `scripts/doctor.sh`, and the harness files below.
+in the same state as the first — plus the **teammates product** built on dsh: a Grok-Bot-style
+roster of agents, each with its own computer (ADR: `knowledge/decisions/dsh-as-teammates-engine.md`,
+research: `docs/research/`). Two scopes, one repo:
+
+- **Config** — `settings.yaml`, `skills/`, `install.sh`, `scripts/doctor.sh`, the harness files below.
+- **Product** — the bot supervisor and per-bot profiles (features from `feat-016` on).
 
 The delivery workflow is the `dcnet-workflow` skill — **superpowers** for the design path
 (brainstorm → plan → implement → verify → ship) and the files below for state. Facts that outlive a

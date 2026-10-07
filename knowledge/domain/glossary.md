@@ -11,7 +11,11 @@ tags: [glossary]
 - **agent preset** (`standard` / `ptc` / `minimal` / `cordis`) — which tools the agent has. `cordis` evaluates model-written JavaScript against the live runtime: a trust boundary, treat it as shell access.
 - **access mode / permission preset** (`workspace-write` + `ask`, `danger-full-access` + `never`) — where writes are allowed and whether a prompt appears. The sandbox covers **files only**; reads and network are never confined.
 - **workspace** — the directory dsh was launched from, unless another is chosen in the UI.
-- **profile** — an installed runtime composition under `$DSH_HOME/profiles/<name>`. Not the same thing as an agent preset.
+- **profile** — an installed runtime composition under `$DSH_HOME/profiles/<name>`: a bundle list plus patch layers. Not the same thing as an agent preset, and not an isolation boundary.
+- **bundle** — a plugin package contributing a `cordis.patch.yml` layer, listed in a profile's `dsh.profile.bundles`.
+- **patch layer** — a `cordis.patch.yml` / `--patch` overlay of id-targeted edits applied after all bundle layers.
+- **profile template** — one of `acp` / `web` / `headless` / `sdk` / `sdk-minimal`, copied once by `--from-default-profile`.
+- **ACP** — Agent Client Protocol: dsh's automation-only stdio surface (the `acp` profile); sessions, prompts, permissions — no presentation data.
 - **skill** — a `SKILL.md` bundle; see [the layout convention](../conventions/skill-bundle-layout.md).
 
 # Related

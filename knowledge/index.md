@@ -18,6 +18,7 @@ Durable knowledge about this repo. Three layers, kept apart:
 - Change `settings.yaml` → [systems/opencode-go-route.md](systems/opencode-go-route.md) · [systems/omp-gateway-route.md](systems/omp-gateway-route.md) · [systems/credential-resolution.md](systems/credential-resolution.md)
 - Add a model or provider → [runbooks/add-model-or-provider.md](runbooks/add-model-or-provider.md)
 - Install or bump a dsh plugin → [runbooks/dsh-plugins.md](runbooks/dsh-plugins.md)
+- Build bots on dsh (ACP, profiles, isolation) → [systems/acp-surface.md](systems/acp-surface.md) · [systems/profiles-and-bundles.md](systems/profiles-and-bundles.md) · [decisions/dsh-as-teammates-engine.md](decisions/dsh-as-teammates-engine.md)
 - Verify before claiming done → [runbooks/verify-change.md](runbooks/verify-change.md)
 - CI is red, or wondering what CI covers → [runbooks/ci-verification.md](runbooks/ci-verification.md)
 - Something is broken → [gotchas/](gotchas/index.md)

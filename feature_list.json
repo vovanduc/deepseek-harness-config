@@ -137,6 +137,15 @@
       "status": "done",
       "evidence": "scripts/doctor.sh + settings.yaml (2026-09-16). Cause confirmed in source (dsh-settings-file -> dsh-atomic-write: writeFile('<path>.<hex>.tmp') + rename(temp, path), no realpath) and then reproduced: with the link restored, picking a model in the web picker drifted it inside 3s, the live file then showing the predicted [ text, image ] reserialisation, a rewritten agent-default-model and a new ui-onboarding key. doctor.sh's 'settings' check now requires a symlink resolved into this repo and distinguishes severity; all four branches verified: regular file + diverged -> NOT READY ('the live file has also DIVERGED from the repo, so the server is running settings this repo does not describe'); regular file + content matching -> NOT READY ('content still matches the repo ... the next repo edit is what will not apply'); symlink to /tmp -> NOT READY naming the target; correct symlink -> READY (6 ok). The most frequent trigger is cured rather than documented: the repo settings.yaml now carries ui-onboarding.welcomeNoticeVersion = 2026-08-13.1 (field name from WELCOME_NOTICE_ACK_FIELD in dsh-client-ui-settings-models), so state.acknowledged is true on load and the modal returns null before rendering — no Continue button, no write; verified the notice is gone on a fresh UI load and the link survives it. Trigger corrected after review: it is an explicit settings WRITE, not 'using the UI' — opening the panel, switching workspace and starting a session only read settings and leave the link intact (measured). init.sh exit 0; doctor.sh READY; 163 links / 0 broken; shellcheck clean.",
       "spec": "knowledge/gotchas/settings-symlink-drift.md"
+    },
+    {
+        "id": "feat-016",
+        "name": "Vertical slice: two ACP bots with isolated homes",
+        "description": "First milestone of the Grok-Bot-style teammates product now hosted in this repo (ADR: knowledge/decisions/dsh-as-teammates-engine.md; research: docs/research/dsh-grok-bot-brief-2026-10-07.md). Prove the dsh side end to end before any container work: two bot profiles via `dsh --profile bot-<name> --from-default-profile acp`, each with its own DSH_HOME, workspace dir, and persona patch (system-prompt personaPrefix); a ~150-line supervisor speaking ACP v1 over stdio (initialize -> session/new -> session/prompt; request_permission policy). Acceptance: (1) a prompt to bot A creates a file only inside A's workspace; (2) B's session/list with cwd filter shows none of A's sessions; (3) kill -9 + respawn + session/resume restores context; (4) an out-of-workspace write triggers session/request_permission and a deny blocks it; (5) session/set_config_option changes the model for the next turn. Set DSH_TELEMETRY_DISABLED=1 in bot env. Containers and the ComputerProvider contract are out of scope for this slice.",
+        "dependencies": [],
+        "status": "not-started",
+        "evidence": "",
+        "spec": "docs/research/dsh-grok-bot-brief-2026-10-07.md"
     }
   ]
 }

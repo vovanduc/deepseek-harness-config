@@ -10,6 +10,9 @@ title: Gotchas — non-obvious traps
 - [An empty YAML value is refused, not ignored](empty-yaml-value-refused.md) — dsh will not start.
 - [Hand-declared models are text-only](hand-declared-models-text-only.md) — add `input: [text, image]`; the flag is not the capability.
 - [`$DSH_HOME/settings.yaml` can stop being a symlink](settings-symlink-drift.md) — repo edits go nowhere and every check still passes.
+- [Sessions are keyed by workspace, not profile](sessions-keyed-by-workspace.md) — one `DSH_HOME` shares one session store across profiles.
+- [OTel telemetry is on by default](telemetry-on-by-default.md) — `FEEDBACK_ONLY` export to DeepSeek; `DSH_TELEMETRY_DISABLED` kills it.
+- [A profile is not a compute boundary](profile-not-a-boundary.md) — sandbox mode covers file effects only; per-bot compute means all `*-local` seams or a container.
 - [`./init.sh` needs write access outside the workspace](init-sh-needs-dsh-home-write.md) — `EPERM` on `cordis.yml` is the sandbox, not the repo.
 - [`dsh web` exits 0 under a TTY](web-ui-exits-under-a-tty.md) — pipe stdout, or run it non-interactively.
 - [A browser-preview proxy 403s every POST `/api`](browser-preview-proxy-403.md) — the Host/Origin fence mismatches the proxy port; use the loopback token URL directly.
